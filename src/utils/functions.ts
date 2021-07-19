@@ -87,14 +87,28 @@ const formatDate = (date: Date) => {
       suffix = "th";
   }
 
-  return [
+  return {
     dayOfWeek,
     day,
     suffix,
     month,
     year,
-    formatTime(date.getHours(), date.getMinutes()),
-  ];
+    time:
+      date.getTime() === 0
+        ? "--:--"
+        : formatTime(date.getHours(), date.getMinutes()),
+  };
 };
 
-export { formatDate };
+const calculateHours = (punchIn: number, punchOut: number) => {
+  if (punchIn === 0 || punchOut === 0) return "--:--";
+
+  const diff = punchOut - punchIn;
+  const rawMinutes = Math.round(diff / 1000 / 60);
+  const hours = Math.floor(rawMinutes / 60);
+  const minutes = rawMinutes % 60;
+
+  return formatTime(hours, minutes);
+};
+
+export { formatDate, calculateHours };
