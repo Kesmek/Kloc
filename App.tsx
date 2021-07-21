@@ -9,7 +9,8 @@ import { colors, headerHeight } from "./src/utils/constants";
 import { createStackNavigator } from "@react-navigation/stack";
 import { RootStackParamList } from "./src/types/navigation";
 import { enableScreens } from "react-native-screens";
-import Main from "./src/containers/Main";
+import Punches from "./src/containers/Punches";
+import EditPunch from "./src/containers/EditPunch";
 
 enableScreens();
 
@@ -48,22 +49,11 @@ const App = () => {
                 headerLeftContainerStyle: { paddingLeft: 15 },
                 headerRightContainerStyle: { paddingRight: 15 },
                 headerTitleAlign: "center",
-                headerTransparent: true,
-                // headerBackImage: () => (
-                //   <Image
-                //     style={{ width: scale(14), height: scale(21) }}
-                //     source={require("../../../assets/images/appBar/back.png")}
-                //   />
-                // ),
-                //Prevents a slight flicker at header
                 detachPreviousScreen: false,
               }}
             >
-              <Screen
-                name="Main"
-                component={Main}
-                options={{ headerShown: false }}
-              />
+              <Screen name="Punches" component={Punches} />
+              <Screen name="Edit Punch" component={EditPunch} />
             </Navigator>
           </NavigationContainer>
         </SafeAreaProvider>

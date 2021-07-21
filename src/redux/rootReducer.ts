@@ -1,6 +1,6 @@
 import { combineReducers } from "@reduxjs/toolkit";
-import main from "./main";
+import punches from "./punches";
 
 export default combineReducers({
-  main,
+  punches,
 });
