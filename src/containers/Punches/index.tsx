@@ -1,10 +1,6 @@
-import { Text, View, ListRenderItem } from "react-native";
-import {
-  BaseButton,
-  BorderlessButton,
-  FlatList,
-  RectButton,
-} from "react-native-gesture-handler";
+import { useLayoutEffect } from "react";
+import { Text, View, ListRenderItem, Alert } from "react-native";
+import { BaseButton, FlatList, RectButton } from "react-native-gesture-handler";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useAppDispatch, useAppSelector } from "../../redux";
 import {
@@ -24,7 +20,25 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
   const dispatch = useAppDispatch();
 
   const createDay = () => {
-    dispatch(addDate());
+    const today = new Date();
+    const matches = data.filter((date) => {
+      const day = new Date(date.date);
+      return day.getDate() === today.getDate();
+    });
+
+    if (!matches.length) {
+      dispatch(addDate());
+    } else {
+      Alert.alert(
+        "Work day already exists for today",
+        "You've already added a work day for today, try again on another day.",
+        [
+          {
+            text: "ok",
+          },
+        ],
+      );
+    }
   };
 
   const renderItem: ListRenderItem<PunchRecord> = ({ item, index }) => {
@@ -36,20 +50,16 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
     const date = formatDate(rawDate);
 
     return (
-      <View
-        style={{
-          backgroundColor: colors.DISABLED_WHITE,
-          height: 60,
-          alignItems: "center",
-          paddingLeft: 15,
-          flexDirection: "row",
-          justifyContent: "space-between",
+      <RectButton
+        style={styles.itemContainer}
+        onPress={() => {
+          navigation.navigate("Edit Punch", { index });
         }}
       >
-        <View>
+        <View style={styles.dateContainer}>
           <Text
             style={styles.date}
-          >{`${date.day}${date.suffix} ${date.month}, ${date.year}`}</Text>
+          >{`${date.day}${date.suffix} ${date.month}`}</Text>
           <Text style={styles.dayOfWeek}>{date.dayOfWeek}</Text>
         </View>
         <View style={styles.punchContainer}>
@@ -61,10 +71,12 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
               }
             }}
           >
-            <Icon name={"login"} size={32} />
-            <Text style={[styles.time, { color: colors.GREEN }]}>
-              {clockIn.time}
-            </Text>
+            <Icon
+              name={"login"}
+              size={32}
+              style={{ color: colors.SECONDARY_GREEN }}
+            />
+            <Text style={styles.time}>{clockIn.time}</Text>
           </RectButton>
           <RectButton
             style={styles.punchItem}
@@ -74,50 +86,55 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
               }
             }}
           >
-            <Icon name={"logout"} size={32} />
-            <Text style={[styles.time, { color: colors.RED }]}>
-              {clockOut.time}
-            </Text>
+            <Icon
+              name={"logout"}
+              size={32}
+              style={{ color: colors.SECONDARY_RED }}
+            />
+            <Text style={styles.time}>{clockOut.time}</Text>
           </RectButton>
           <View style={styles.punchItem}>
-            <Icon name={"schedule"} size={32} />
+            <Icon
+              name={"schedule"}
+              size={32}
+              style={{ color: colors.SECONDARY_PURPLE }}
+            />
             <Text style={styles.time}>
               {calculateHours(rawPunchIn.getTime(), rawPunchOut.getTime())}
             </Text>
           </View>
-          <BorderlessButton
-            style={[styles.punchItem, styles.editButton]}
-            onPress={() => {
-              navigation.navigate("Edit Punch", { index });
-            }}
-          >
-            <Icon name={"edit"} size={32} />
-          </BorderlessButton>
         </View>
-      </View>
+      </RectButton>
     );
   };
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      // eslint-disable-next-line react/no-unstable-nested-components
+      headerRight: () => (
+        <BaseButton
+          onPress={() => console.log("more")}
+          style={{ borderRadius: 20 }}
+        >
+          <Icon name={"more-vert"} color={colors.PRIMARY_WHITE} size={28} />
+        </BaseButton>
+      ),
+    });
+  }, [navigation]);
 
   return (
     <View style={styles.root}>
       <FlatList
         data={data}
         renderItem={renderItem}
-        keyExtractor={(item) => item}
+        keyExtractor={(item) => item.date + item.punchIn}
+        ItemSeparatorComponent={() => <View style={{ height: 2 }} />}
       />
       <BaseButton
-        style={{
-          width: 75,
-          height: 75,
-          backgroundColor: colors.PURPLE,
-          position: "absolute",
-          bottom: 50,
-          right: 50,
-          borderRadius: 75 / 2,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
+        style={styles.newDateButton}
         onPress={createDay}
+        // entering={ZoomIn.springify()}
+        // exiting={ZoomOut}
       >
         <Icon name={"add"} color={colors.PRIMARY_WHITE} size={50} />
       </BaseButton>

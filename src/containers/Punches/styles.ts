@@ -1,29 +1,51 @@
 import { StyleSheet } from "react-native";
+import { colors } from "../../utils/constants";
 
 export default StyleSheet.create({
   root: {
     flex: 1,
   },
   punchContainer: {
-    flex: 1,
+    flex: 2,
     flexDirection: "row",
     justifyContent: "space-evenly",
-    // borderWidth: 2,
   },
   punchItem: {
-    width: 40,
+    width: 50,
     justifyContent: "center",
     alignItems: "center",
-    // borderWidth: 2,
   },
   editButton: {
     justifyContent: "center",
     alignItems: "center",
   },
   time: {
-    fontSize: 14,
+    color: colors.BLACK,
+    fontSize: 16,
     fontWeight: "bold",
   },
   date: { fontSize: 20, fontWeight: "bold" },
-  dayOfWeek: { fontSize: 16, marginLeft: 2 },
+  dayOfWeek: { fontSize: 18, marginLeft: 2 },
+  itemContainer: {
+    backgroundColor: colors.BORDER,
+    height: 65,
+    alignItems: "center",
+    paddingLeft: 15,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  dateContainer: {
+    flex: 1,
+  },
+  newDateButton: {
+    width: 75,
+    height: 75,
+    backgroundColor: colors.PRIMARY_PURPLE,
+    position: "absolute",
+    bottom: 50,
+    right: 50,
+    borderRadius: 75 / 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });
