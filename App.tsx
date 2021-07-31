@@ -32,7 +32,7 @@ const App = () => {
       card: colors.BLACK,
       text: colors.PRIMARY_WHITE,
       border: colors.BORDER,
-      notification: colors.PURPLE,
+      notification: colors.PRIMARY_PURPLE,
     },
   };
 
