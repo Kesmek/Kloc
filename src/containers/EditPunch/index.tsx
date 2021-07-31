@@ -1,12 +1,10 @@
+import RNDateTimePicker, {
+  Event,
+} from "@react-native-community/datetimepicker";
 import { useCallback, useLayoutEffect, useState } from "react";
 import { View, Text, Keyboard, Alert } from "react-native";
-import {
-  TextInput,
-  BorderlessButton,
-  BaseButton,
-  RectButton,
-} from "react-native-gesture-handler";
 import Icon from "react-native-vector-icons/MaterialIcons";
+import { BaseButton, RectButton } from "react-native-gesture-handler";
 import { useAppDispatch, useAppSelector } from "../../redux";
 import {
   createSelectPunchData,
@@ -19,7 +17,7 @@ import {
   EditPunchRouteProps,
 } from "../../types/navigation";
 import { colors } from "../../utils/constants";
-import { formatDate } from "../../utils/functions";
+import { calculateHours, formatDate } from "../../utils/functions";
 import styles from "./styles";
 
 type Props = EditPunchNavigationProps & EditPunchRouteProps;
@@ -29,62 +27,61 @@ const EditPunch = ({ navigation, route }: Props) => {
   const punchData = useAppSelector(createSelectPunchData(route.params.index));
   const formattedDate = formatDate(new Date(punchData?.date ?? 0));
 
-  const [punchInString, setPunchInString] = useState(
-    formatDate(new Date(punchData?.punchIn ?? 0)).time,
+  const [punchInTimePicker, setPunchInTimePicker] = useState(false);
+  const [punchInTime, setPunchInTime] = useState(
+    new Date(punchData?.punchIn ?? punchData?.date),
   );
-  const [punchOutString, setPunchOutString] = useState(
-    formatDate(new Date(punchData?.punchOut ?? 0)).time,
+  const [punchOutTimePicker, setPunchOutTimePicker] = useState(false);
+  const [punchOutTime, setPunchOutTime] = useState(
+    new Date(punchData?.punchOut ?? punchData?.date),
   );
 
-  const handleChangePunchIn = (text: string) => {
-    setPunchInString(text);
+  const handleChangePunchInTime = (date?: Date) => {
+    const newDate = date ?? punchInTime;
+
+    setPunchInTimePicker(false);
+    setPunchInTime(newDate);
   };
 
-  const handleChangePunchOut = (text: string) => {
-    setPunchOutString(text);
+  const handleChangePunchOutTime = (date?: Date) => {
+    const newDate = date ?? punchOutTime;
+
+    setPunchOutTime(newDate);
+    setPunchOutTimePicker(false);
   };
 
   const parsePunchTimes = useCallback(() => {
-    const punchInDate = new Date();
-    const punchOutDate = new Date();
-    const [punchInHours, punchInMinutes] = punchInString
-      .split(":")
-      .map((string) => parseInt(string));
-    const [punchOutHours, punchOutMinutes] = punchOutString
-      .split(":")
-      .map((string) => parseInt(string));
+    const punchInDate = new Date(punchData?.date);
+    const punchOutDate = new Date(punchData?.date);
+    punchInDate.setHours(punchInTime.getHours(), punchInTime.getMinutes());
+    punchOutDate.setHours(punchOutTime.getHours(), punchOutTime.getMinutes());
 
-    if (punchInHours && punchInMinutes) {
-      punchInDate.setHours(punchInHours, punchInMinutes);
-      dispatch(
-        setPunchIn({
-          index: route.params.index,
-          date: punchInDate.getTime().toString(),
-        }),
-      );
-    }
+    dispatch(
+      setPunchIn({
+        index: route.params.index,
+        date: punchInDate.getTime(),
+      }),
+    );
 
-    if (punchOutHours && punchOutMinutes) {
-      punchOutDate.setHours(punchOutHours, punchOutMinutes);
-      dispatch(
-        setPunchOut({
-          index: route.params.index,
-          date: punchOutDate.getTime().toString(),
-        }),
-      );
-    }
+    dispatch(
+      setPunchOut({
+        index: route.params.index,
+        date: punchOutDate.getTime(),
+      }),
+    );
 
     navigation.goBack();
-  }, [dispatch, navigation, punchInString, punchOutString, route.params.index]);
+  }, [
+    dispatch,
+    navigation,
+    punchData?.date,
+    punchInTime,
+    punchOutTime,
+    route.params.index,
+  ]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      // eslint-disable-next-line react/no-unstable-nested-components
-      headerRight: () => (
-        <BorderlessButton onPress={parsePunchTimes} borderless={true}>
-          <Icon name={"done"} color={colors.PRIMARY_WHITE} size={28} />
-        </BorderlessButton>
-      ),
       headerTitle: formattedDate.dayOfWeek,
     });
   }, [formattedDate.dayOfWeek, navigation, parsePunchTimes]);
@@ -92,64 +89,98 @@ const EditPunch = ({ navigation, route }: Props) => {
   return (
     <BaseButton
       style={styles.root}
-      onPress={() => Keyboard.dismiss()}
+      onPress={Keyboard.dismiss}
       rippleColor={"transparent"}
     >
       <Text
         style={styles.date}
-      >{`${formattedDate.day}${formattedDate.suffix} ${formattedDate.month} ${formattedDate.year}`}</Text>
-      <View style={{ flexDirection: "row", marginTop: 20 }}>
-        <View style={styles.punchContainer}>
-          <Text style={styles.punchText}>Punch In</Text>
-          <TextInput
-            value={punchInString}
-            onChangeText={handleChangePunchIn}
-            style={styles.punchInput}
-            maxLength={5}
-          />
-        </View>
-        <View style={styles.punchContainer}>
-          <Text style={[styles.punchText, { color: colors.RED }]}>
-            Punch Out
-          </Text>
-          <TextInput
-            value={punchOutString}
-            onChangeText={handleChangePunchOut}
-            style={styles.punchInput}
-            maxLength={5}
-          />
-        </View>
+      >{`${formattedDate.day}${formattedDate.suffix} ${formattedDate.month}, ${formattedDate.year}`}</Text>
+      <View style={styles.punchContainer}>
+        <Text style={styles.punchText}>Punch In</Text>
+        <Icon
+          name={"login"}
+          size={32}
+          style={{
+            color: colors.SECONDARY_GREEN,
+          }}
+        />
+        <Text style={styles.time} onPress={() => setPunchInTimePicker(true)}>
+          {formatDate(punchInTime).time}
+        </Text>
       </View>
-      <RectButton
-        style={{
-          backgroundColor: "red",
-          height: 50,
-          marginTop: 20,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-        rippleColor={"#505050"}
-        onPress={() =>
-          Alert.alert(
-            "Delete this punch?",
-            "This action is irreversible, do you want to continue?",
-            [
-              {
-                text: "Yes",
-                onPress: () => {
-                  dispatch(removeDate(route.params.index));
-                  navigation.goBack();
+      <View style={styles.punchContainer}>
+        <Text style={styles.punchText}>Punch Out</Text>
+        <Icon
+          name={"logout"}
+          size={32}
+          style={{
+            color: colors.SECONDARY_RED,
+          }}
+        />
+        <Text
+          style={[styles.time, { backgroundColor: colors.SECONDARY_RED }]}
+          onPress={() => setPunchOutTimePicker(true)}
+        >
+          {formatDate(punchOutTime).time}
+        </Text>
+      </View>
+      <View style={styles.punchContainer}>
+        <Text style={styles.punchText}>Hours Worked</Text>
+        <Icon
+          name={"schedule"}
+          size={32}
+          style={{
+            color: colors.SECONDARY_PURPLE,
+          }}
+        />
+        <Text
+          style={[styles.time, { backgroundColor: colors.SECONDARY_PURPLE }]}
+        >
+          {calculateHours(punchInTime.getTime(), punchOutTime.getTime())}
+        </Text>
+      </View>
+      {punchInTimePicker && (
+        <RNDateTimePicker
+          mode={"time"}
+          value={punchInTime}
+          onChange={(_: Event, date?: Date) => handleChangePunchInTime(date)}
+        />
+      )}
+      {punchOutTimePicker && (
+        <RNDateTimePicker
+          mode={"time"}
+          value={punchOutTime}
+          onChange={(_: Event, date?: Date) => handleChangePunchOutTime(date)}
+        />
+      )}
+      <View style={{ flexDirection: "row", justifyContent: "space-around" }}>
+        <RectButton
+          style={[styles.button, { backgroundColor: colors.PRIMARY_RED }]}
+          onPress={() =>
+            Alert.alert(
+              "Delete this punch?",
+              "This action is irreversible, do you want to continue?",
+              [
+                {
+                  text: "Yes",
+                  onPress: () => {
+                    dispatch(removeDate(route.params.index));
+                    navigation.goBack();
+                  },
                 },
-              },
-              {
-                text: "No",
-              },
-            ],
-          )
-        }
-      >
-        <Text style={{ fontSize: 30, fontWeight: "bold" }}>DELETE</Text>
-      </RectButton>
+                {
+                  text: "No",
+                },
+              ],
+            )
+          }
+        >
+          <Icon name={"close"} size={40} />
+        </RectButton>
+        <RectButton style={styles.button} onPress={parsePunchTimes}>
+          <Icon name={"done"} size={40} />
+        </RectButton>
+      </View>
     </BaseButton>
   );
 };
