@@ -51,15 +51,21 @@ const numberToMonth = (month: number) => {
 };
 
 const formatTime = (hours: number, minutes: number) => {
+  let formattedHours;
+  let formattedMinutes;
   if (hours < 10) {
-    if (minutes < 10) {
-      return `0${hours}:0${minutes}`;
-    } else {
-      return `0${hours}:${minutes}`;
-    }
+    formattedHours = `0${hours}`;
   } else {
-    return `${hours}:${minutes}`;
+    formattedHours = `${hours}`;
   }
+
+  if (minutes < 10) {
+    formattedMinutes = `0${minutes}`;
+  } else {
+    formattedMinutes = `${minutes}`;
+  }
+
+  return `${formattedHours}:${formattedMinutes}`;
 };
 
 const formatDate = (date: Date) => {
