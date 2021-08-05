@@ -1,11 +1,4 @@
 module.exports = {
-  presets: [
-    [
-      "module:metro-react-native-babel-preset",
-      { useTransformReactJSXExperimental: true },
-    ],
-    "@babel/preset-typescript",
-  ],
   plugins: [
     [
       "@babel/plugin-transform-react-jsx",
@@ -14,5 +7,12 @@ module.exports = {
       },
     ],
     "react-native-reanimated/plugin",
+  ],
+  presets: [
+    [
+      "module:metro-react-native-babel-preset",
+      { useTransformReactJSXExperimental: true },
+    ],
+    "@babel/preset-typescript",
   ],
 };
