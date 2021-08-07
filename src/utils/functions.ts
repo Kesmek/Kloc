@@ -94,15 +94,15 @@ const formatDate = (date: Date) => {
   }
 
   return {
-    dayOfWeek,
     day,
-    suffix,
+    dayOfWeek,
     month,
-    year,
+    suffix,
     time:
       date.getTime() === 0
         ? "--:--"
         : formatTime(date.getHours(), date.getMinutes()),
+    year,
   };
 };
 
