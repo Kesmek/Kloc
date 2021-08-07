@@ -19,6 +19,14 @@ export default StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
   },
+  notesInput: {
+    backgroundColor: colors.BACKGROUND,
+    borderRadius: 10,
+    fontSize: 17,
+    marginTop: 5,
+    paddingHorizontal: 10,
+    width: "100%",
+  },
   punchContainer: {
     alignItems: "center",
     flexDirection: "row",

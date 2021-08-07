@@ -1,7 +1,7 @@
 import RNDateTimePicker, {
   Event,
 } from "@react-native-community/datetimepicker";
-import { useCallback, useEffect, useLayoutEffect, useState } from "react";
+import { useCallback, useLayoutEffect, useState } from "react";
 import { View, Text, Keyboard, Alert } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import {
@@ -202,13 +202,7 @@ const EditPunch = ({ navigation, route }: Props) => {
           multiline={true}
           onChangeText={handleChangeText}
           placeholder={"Additional information about this work day"}
-          style={{
-            backgroundColor: colors.BACKGROUND,
-            borderRadius: 10,
-            fontSize: 17,
-            paddingHorizontal: 10,
-            width: "100%",
-          }}
+          style={styles.notesInput}
           value={additionalText}
         />
       </View>
