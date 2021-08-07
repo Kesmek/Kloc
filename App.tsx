@@ -5,8 +5,8 @@ import store from "./src/redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistStore } from "redux-persist";
 import { NavigationContainer, Theme } from "@react-navigation/native";
-import { colors, headerHeight } from "./src/utils/constants";
-import { createStackNavigator } from "@react-navigation/stack";
+import { colors } from "./src/utils/constants";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { RootStackParamList } from "./src/types/navigation";
 import { enableScreens } from "react-native-screens";
 import Punches from "./src/containers/Punches";
@@ -16,7 +16,7 @@ enableScreens();
 
 const persistor = persistStore(store);
 
-const { Screen, Navigator } = createStackNavigator<RootStackParamList>();
+const { Screen, Navigator } = createNativeStackNavigator<RootStackParamList>();
 
 const App = () => {
   LogBox.ignoreAllLogs(true);
@@ -25,15 +25,15 @@ const App = () => {
   StatusBar.setBackgroundColor("transparent");
 
   const darkTheme: Theme = {
-    dark: true,
     colors: {
-      primary: colors.PRIMARY_WHITE,
       background: colors.BLACK,
-      card: colors.BLACK,
-      text: colors.PRIMARY_WHITE,
       border: colors.BORDER,
+      card: colors.BLACK,
       notification: colors.PRIMARY_PURPLE,
+      primary: colors.PRIMARY_WHITE,
+      text: colors.PRIMARY_WHITE,
     },
+    dark: true,
   };
 
   return (
@@ -43,17 +43,15 @@ const App = () => {
           <NavigationContainer theme={darkTheme}>
             <Navigator
               screenOptions={{
-                animationEnabled: true,
                 gestureEnabled: false,
-                headerStyle: { height: headerHeight },
-                headerLeftContainerStyle: { paddingLeft: 15 },
-                headerRightContainerStyle: { paddingRight: 15 },
-                headerTitleAlign: "center",
-                detachPreviousScreen: false,
               }}
             >
-              <Screen name="Punches" component={Punches} />
-              <Screen name="Edit Punch" component={EditPunch} />
+              <Screen component={Punches} name="Punches" />
+              <Screen
+                component={EditPunch}
+                name="Edit Punch"
+                options={{ animation: "slide_from_right" }}
+              />
             </Navigator>
           </NavigationContainer>
         </SafeAreaProvider>
