@@ -21,3 +21,28 @@ export const colors = {
   SECONDARY_WHITE: "#A5A5A5",
   YELLOW: "#FFFF00",
 };
+
+export const monthNames = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+export const dayNames = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "thursday",
+  "Friday",
+  "Saturday",
+];

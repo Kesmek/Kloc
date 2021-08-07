@@ -116,11 +116,10 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
   };
 
   const renderSectionHeader = ({
-    section: { month, data },
+    section: { month },
   }: {
     section: SectionListData<PunchRecord>;
   }) => {
-    // if (data.length) {
     return (
       <Text
         style={{
@@ -134,9 +133,6 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
         {month}
       </Text>
     );
-    // } else {
-    //   return null;
-    // }
   };
 
   const renderItem: SectionListRenderItem<PunchRecord> = ({ item, index }) => {

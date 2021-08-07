@@ -1,4 +1,5 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit";
+import { monthNames } from "../utils/constants";
 import { RootState } from "./index";
 
 export type PunchRecord = {
@@ -43,11 +44,11 @@ const mainSlice = createSlice({
     },
     setPunchIn: (state, action) => {
       const { index, date } = action.payload;
-      state.data[index].punchIn = parseInt(date);
+      state.data[index].punchIn = date;
     },
     setPunchOut: (state, action) => {
       const { index, date } = action.payload;
-      state.data[index].punchOut = parseInt(date);
+      state.data[index].punchOut = date;
     },
   },
 });
@@ -114,12 +115,13 @@ export const createSelectSectionedPunches = () =>
       },
     ];
 
-    MOCK.forEach((punch) => {
+    data.forEach((punch) => {
       const date = new Date(punch.date);
       sectionedPunches[date.getMonth()].data.push(punch);
     });
 
-    return sectionedPunches;
+    //Only return sections with data
+    return sectionedPunches.filter((section) => section.data.length);
   });
 
 export const {
