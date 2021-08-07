@@ -17,7 +17,7 @@ export default StyleSheet.create({
     flexDirection: "row",
     height: 65,
     justifyContent: "space-between",
-    paddingLeft: 15,
+    paddingHorizontal: 15,
   },
   moreContainer: {
     backgroundColor: colors.BACKGROUND,
@@ -52,17 +52,27 @@ export default StyleSheet.create({
     width: 75,
   },
   punchContainer: {
-    flex: 1.75,
+    flex: 1.5,
     flexDirection: "row",
+    height: "90%",
     justifyContent: "space-evenly",
   },
   punchItem: {
     alignItems: "center",
+    borderRadius: 8,
+    flex: 1,
     justifyContent: "center",
     width: 50,
   },
   root: {
     flex: 1,
+  },
+  sectionHeader: {
+    backgroundColor: colors.BACKGROUND,
+    color: colors.PRIMARY_WHITE,
+    fontSize: 24,
+    fontWeight: "bold",
+    paddingLeft: 15,
   },
   time: {
     color: colors.BLACK,

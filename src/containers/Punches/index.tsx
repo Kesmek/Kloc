@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import {
   Text,
   View,
@@ -120,19 +120,7 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
   }: {
     section: SectionListData<PunchRecord>;
   }) => {
-    return (
-      <Text
-        style={{
-          backgroundColor: colors.BACKGROUND,
-          color: colors.PRIMARY_WHITE,
-          fontSize: 24,
-          fontWeight: "bold",
-          paddingLeft: 15,
-        }}
-      >
-        {month}
-      </Text>
-    );
+    return <Text style={styles.sectionHeader}>{month}</Text>;
   };
 
   const renderItem: SectionListRenderItem<PunchRecord> = ({ item, index }) => {
@@ -155,42 +143,91 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
           <Text style={styles.dayOfWeek}>{date.dayOfWeek}</Text>
         </View>
         <View style={styles.punchContainer}>
-          <RectButton
-            onPress={() => {
-              if (rawPunchIn.getTime() === 0) {
-                dispatch(punchIn(index));
-              }
-            }}
-            style={styles.punchItem}
-          >
-            <Icon
-              name={"login"}
-              size={32}
-              style={{ color: colors.SECONDARY_GREEN }}
-            />
-            <Text style={styles.time}>{formatDate(rawPunchIn).time}</Text>
-          </RectButton>
-          <RectButton
-            onPress={() => handlePunchOut(rawPunchIn, rawPunchOut, index)}
-            style={styles.punchItem}
-          >
-            <Icon
-              name={"logout"}
-              size={32}
-              style={{ color: colors.SECONDARY_RED }}
-            />
-            <Text style={styles.time}>{formatDate(rawPunchOut).time}</Text>
-          </RectButton>
-          <View style={styles.punchItem}>
-            <Icon
-              name={"schedule"}
-              size={32}
-              style={{ color: colors.SECONDARY_PURPLE }}
-            />
-            <Text style={styles.time}>
-              {calculateHours(rawPunchIn.getTime(), rawPunchOut.getTime())}
-            </Text>
-          </View>
+          {rawPunchIn.getTime() === 0 ? (
+            <>
+              <RectButton
+                onPress={() => dispatch(punchIn(index))}
+                style={[
+                  styles.punchItem,
+                  { backgroundColor: colors.SECONDARY_GREEN },
+                ]}
+              >
+                <Icon
+                  name={"login"}
+                  size={32}
+                  style={{ color: colors.BLACK }}
+                />
+              </RectButton>
+              <View style={{ width: 15 }} />
+              <RectButton
+                onPress={() => handlePunchOut(rawPunchIn, rawPunchOut, index)}
+                style={[
+                  styles.punchItem,
+                  { backgroundColor: colors.SECONDARY_RED },
+                ]}
+              >
+                <Icon
+                  name={"logout"}
+                  size={32}
+                  style={{ color: colors.BLACK }}
+                />
+              </RectButton>
+            </>
+          ) : rawPunchOut.getTime() === 0 ? (
+            <>
+              <View style={styles.punchItem}>
+                <Icon
+                  name={"login"}
+                  size={32}
+                  style={{ color: colors.SECONDARY_GREEN }}
+                />
+                <Text style={styles.time}>{formatDate(rawPunchIn).time}</Text>
+              </View>
+              <View style={{ width: 15 }} />
+              <RectButton
+                onPress={() => dispatch(punchOut(index))}
+                style={[
+                  styles.punchItem,
+                  { backgroundColor: colors.SECONDARY_RED },
+                ]}
+              >
+                <Icon
+                  name={"logout"}
+                  size={32}
+                  style={{ color: colors.BLACK }}
+                />
+              </RectButton>
+            </>
+          ) : (
+            <>
+              <View style={styles.punchItem}>
+                <Icon
+                  name={"login"}
+                  size={32}
+                  style={{ color: colors.SECONDARY_GREEN }}
+                />
+                <Text style={styles.time}>{formatDate(rawPunchIn).time}</Text>
+              </View>
+              <View style={styles.punchItem}>
+                <Icon
+                  name={"logout"}
+                  size={32}
+                  style={{ color: colors.SECONDARY_RED }}
+                />
+                <Text style={styles.time}>{formatDate(rawPunchOut).time}</Text>
+              </View>
+              <View style={styles.punchItem}>
+                <Icon
+                  name={"schedule"}
+                  size={32}
+                  style={{ color: colors.SECONDARY_PURPLE }}
+                />
+                <Text style={styles.time}>
+                  {calculateHours(rawPunchIn.getTime(), rawPunchOut.getTime())}
+                </Text>
+              </View>
+            </>
+          )}
         </View>
       </RectButton>
     );
