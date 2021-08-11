@@ -1,12 +1,21 @@
 import { StyleSheet } from "react-native";
 import { colors } from "../../utils/constants";
 
+export const SEPARATOR_HEIGHT = 2;
+export const ITEM_HEIGHT = 65;
+
 export default StyleSheet.create({
-  date: { fontSize: 20, fontWeight: "bold" },
+  button: {
+    alignItems: "center",
+    height: ITEM_HEIGHT,
+    justifyContent: "center",
+    width: "100%",
+  },
+  date: { fontSize: 18, fontWeight: "bold" },
   dateContainer: {
     flex: 1,
   },
-  dayOfWeek: { fontSize: 18, marginLeft: 2 },
+  dayOfWeek: { fontSize: 18 },
   editButton: {
     alignItems: "center",
     justifyContent: "center",
@@ -15,17 +24,18 @@ export default StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.BORDER,
     flexDirection: "row",
-    height: 65,
+    height: ITEM_HEIGHT,
     justifyContent: "space-between",
     paddingHorizontal: 15,
   },
   moreContainer: {
     backgroundColor: colors.BACKGROUND,
+    borderBottomWidth: 2,
     borderColor: "#222222",
-    borderWidth: 2,
+    borderLeftWidth: 2,
     position: "absolute",
     right: 0,
-    width: 200,
+    width: 225,
   },
   moreText: {
     color: colors.PRIMARY_WHITE,
@@ -33,23 +43,12 @@ export default StyleSheet.create({
     padding: 8,
     textAlign: "left",
   },
-  newDateButton: {
-    alignItems: "center",
-    flex: 1,
-    justifyContent: "center",
-    width: "100%",
-  },
   newDateWrapper: {
     alignItems: "center",
     backgroundColor: colors.PRIMARY_PURPLE,
-    borderRadius: 75 / 2,
-    bottom: 50,
-    height: 75,
+    height: ITEM_HEIGHT,
     justifyContent: "center",
-    overflow: "hidden",
-    position: "absolute",
-    right: 50,
-    width: 75,
+    width: "100%",
   },
   punchContainer: {
     flex: 1.5,

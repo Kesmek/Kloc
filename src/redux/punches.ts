@@ -1,4 +1,5 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit";
+import { monthNames } from "../utils/constants";
 import { RootState } from "./index";
 
 export type PunchRecord = {
@@ -9,121 +10,126 @@ export type PunchRecord = {
 };
 
 type PunchState = {
-  data: PunchRecord[];
+  [year: number]: PunchRecord[][];
 };
 
-const initialState: PunchState = {
-  data: [],
-};
+const initialState: PunchState = {};
 
 const selectPunches = (state: RootState) => state.punches;
-const selectPunchData = (state: RootState) => state.punches.data;
 
 const mainSlice = createSlice({
   initialState,
   name: "punches",
   reducers: {
+    addCompletePunch: (state, action) => {
+      const punch = action.payload;
+      const date = new Date(punch.date);
+      const year = date.getFullYear();
+      const month = date.getMonth();
+
+      if (!state[year]) {
+        state[year] = [[], [], [], [], [], [], [], [], [], [], [], []];
+      }
+
+      const index = state[year][month].findIndex(
+        (day) => new Date(day.date).getDate() > date.getDate(),
+      );
+      if (index > -1) {
+        state[year][month].splice(index, 0, punch);
+      } else {
+        state[year][month].push(punch);
+      }
+    },
     addDate: (state) => {
-      state.data.push({ date: Date.now(), punchIn: null, punchOut: null });
+      const now = new Date();
+
+      if (!state?.[now.getFullYear()]) {
+        state[now.getFullYear()] = [
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+        ];
+      }
+
+      state[now.getFullYear()][now.getMonth()].push({
+        date: Date.now(),
+        punchIn: null,
+        punchOut: null,
+      });
     },
     punchIn: (state, action) => {
-      const index = action.payload;
-      state.data[index].punchIn = Date.now();
+      const { index, month, year } = action.payload;
+      state[year][month][index].punchIn = Date.now();
     },
     punchOut: (state, action) => {
-      const index = action.payload;
-      state.data[index].punchOut = Date.now();
+      const { index, month, year } = action.payload;
+      state[year][month][index].punchOut = Date.now();
     },
     removeDate: (state, action) => {
-      state.data.splice(action.payload, 1);
+      const { index, month, year } = action.payload;
+      state[year][month].splice(index, 1);
     },
     setNotes: (state, action) => {
-      const { index, notes } = action.payload;
-      state.data[index].notes = notes;
+      const { index, month, year, notes } = action.payload;
+      state[year][month][index].notes = notes;
     },
     setPunchIn: (state, action) => {
-      const { index, date } = action.payload;
-      state.data[index].punchIn = date;
+      const { index, month, year, date } = action.payload;
+      state[year][month][index].punchIn = date;
     },
     setPunchOut: (state, action) => {
-      const { index, date } = action.payload;
-      state.data[index].punchOut = date;
+      const { index, month, year, date } = action.payload;
+      state[year][month][index].punchOut = date;
     },
   },
 });
 
 export const createSelectPunches = () =>
-  createSelector(selectPunches, (punches) => punches.data);
+  createSelector(selectPunches, (punches) => punches);
 
-export const createSelectPunchData = (index: number) =>
-  createSelector(selectPunchData, (data) => data[index]);
+export const createSelectYearData = (year: number) =>
+  createSelector(selectPunches, (data) => data?.[year] ?? []);
 
-export const createSelectSectionedPunches = () =>
-  createSelector(selectPunchData, (data) => {
-    const sectionedPunches: {
-      data: PunchRecord[];
-      month: string;
-    }[] = [
-      {
-        data: [],
-        month: "January",
-      },
-      {
-        data: [],
-        month: "February",
-      },
-      {
-        data: [],
-        month: "March",
-      },
-      {
-        data: [],
-        month: "April",
-      },
-      {
-        data: [],
-        month: "May",
-      },
-      {
-        data: [],
-        month: "June",
-      },
-      {
-        data: [],
-        month: "July",
-      },
-      {
-        data: [],
-        month: "August",
-      },
-      {
-        data: [],
-        month: "September",
-      },
-      {
-        data: [],
-        month: "October",
-      },
-      {
-        data: [],
-        month: "November",
-      },
-      {
-        data: [],
-        month: "December",
-      },
-    ];
-
-    data.forEach((punch) => {
-      const date = new Date(punch.date);
-      sectionedPunches[date.getMonth()].data.push(punch);
-    });
+export const createSelectSectionedPunches = (year: number) =>
+  createSelector(selectPunches, (data) => {
+    const yearData = data?.[year];
 
     //Only return sections with data
-    return sectionedPunches.filter((section) => section.data.length);
+    const sectionedPunches =
+      yearData
+        ?.map((value, index) => {
+          const month = monthNames[index];
+          return {
+            data: value,
+            month: month,
+          };
+        })
+        .filter((section) => section.data.length) ?? [];
+
+    return sectionedPunches;
   });
 
+export const createSelectSinglePunch = ({
+  index,
+  month,
+  year,
+}: {
+  index: number;
+  month: number;
+  year: number;
+}) => createSelector(selectPunches, (data) => data?.[year]?.[month]?.[index]);
+
 export const {
+  addCompletePunch,
   addDate,
   removeDate,
   punchIn,

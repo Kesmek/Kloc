@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   Text,
   View,
@@ -10,77 +10,49 @@ import {
 import {
   BaseButton,
   BorderlessButton,
-  PanGestureHandler,
-  PanGestureHandlerGestureEvent,
   RectButton,
 } from "react-native-gesture-handler";
 import Animated, {
   AnimatedLayout,
+  FadeInDown,
   FadeInUp,
+  FadeOut,
   FadeOutUp,
-  useAnimatedGestureHandler,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
 } from "react-native-reanimated";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useAppDispatch, useAppSelector } from "../../redux";
 import {
   addDate,
-  createSelectPunches,
   PunchRecord,
   punchIn,
   punchOut,
   createSelectSectionedPunches,
+  createSelectYearData,
 } from "../../redux/punches";
 import { PunchesNavigationProps } from "../../types/navigation";
-import { colors } from "../../utils/constants";
+import { colors, monthNames } from "../../utils/constants";
 import { calculateHours, formatDate } from "../../utils/functions";
-import styles from "./styles";
+import styles, { ITEM_HEIGHT, SEPARATOR_HEIGHT } from "./styles";
 
 const AnimatedBaseButton = Animated.createAnimatedComponent(BaseButton);
 
 const Punches = ({ navigation }: PunchesNavigationProps) => {
-  const data = useAppSelector(createSelectPunches());
-  const sectionedData = useAppSelector(createSelectSectionedPunches());
-  const dispatch = useAppDispatch();
-
+  const SectionListRef = useRef<SectionList>(null);
   const [showMore, setShowMore] = useState(false);
+  const [showAddOptions, setShowAddOptions] = useState(false);
+  const [dataYear, setDataYear] = useState(new Date().getFullYear());
 
-  const translateX = useSharedValue(0);
-  const translateY = useSharedValue(0);
-
-  const animatedGestureEvent = useAnimatedGestureHandler<
-    PanGestureHandlerGestureEvent,
-    { offsetX: number; offsetY: number }
-  >({
-    onActive: (event) => {
-      translateX.value = event.translationX;
-      translateY.value = event.translationY;
-    },
-    onEnd: () => {
-      translateX.value = withSpring(0);
-      translateY.value = withSpring(0);
-    },
-  });
-
-  const animatedButton = useAnimatedStyle(() => {
-    return {
-      transform: [
-        { translateX: translateX.value / 2 },
-        { translateY: translateY.value / 2 },
-      ],
-    };
-  });
+  const sectionedData = useAppSelector(createSelectSectionedPunches(dataYear));
+  const rawYearData = useAppSelector(createSelectYearData(dataYear));
+  const dispatch = useAppDispatch();
 
   const createDay = () => {
     const today = new Date();
-    const matches = data.filter((date) => {
-      const day = new Date(date.date);
-      return day.getDate() === today.getDate();
-    });
+    const matches = rawYearData[today.getMonth()].find(
+      (date) => new Date(date.date).getDate() === today.getDate(),
+    );
 
-    if (!matches.length) {
+    if (!matches) {
       dispatch(addDate());
     } else {
       Alert.alert(
@@ -95,32 +67,20 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
     }
   };
 
-  const handlePunchOut = (inDate: Date, outDate: Date, index: number) => {
-    if (inDate.getTime() === 0) {
-      Alert.alert(
-        "Punch-In Missing",
-        "You must punch in before you can punch out.",
-        [
-          {
-            text: "ok",
-          },
-        ],
-      );
-    } else if (outDate.getTime() === 0) {
-      dispatch(punchOut(index));
-    }
-  };
-
   const handleCalculateHours = () => {
     setShowMore(false);
   };
 
   const renderSectionHeader = ({
-    section: { month },
+    section: { month, data },
   }: {
     section: SectionListData<PunchRecord>;
   }) => {
-    return <Text style={styles.sectionHeader}>{month}</Text>;
+    return (
+      <Text style={styles.sectionHeader}>
+        {month} {new Date(data[0].date).getFullYear()}
+      </Text>
+    );
   };
 
   const renderItem: SectionListRenderItem<PunchRecord> = ({ item, index }) => {
@@ -132,21 +92,37 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
     return (
       <RectButton
         onPress={() => {
-          navigation.navigate("Edit Punch", { index });
+          navigation.navigate("Edit Punch", {
+            index,
+            month: rawDate.getMonth(),
+            year: dataYear,
+          });
         }}
         style={styles.itemContainer}
       >
         <View style={styles.dateContainer}>
           <Text
             style={styles.date}
-          >{`${date.month} ${date.day}${date.suffix}`}</Text>
-          <Text style={styles.dayOfWeek}>{date.dayOfWeek}</Text>
+          >{`${date.day}${date.suffix}, ${date.dayOfWeek}.`}</Text>
+          {item.notes && item.notes.length > 15 ? (
+            <Text style={styles.dayOfWeek}>{item.notes.substr(0, 15)}...</Text>
+          ) : (
+            item.notes && <Text style={styles.dayOfWeek}>{item.notes}</Text>
+          )}
         </View>
         <View style={styles.punchContainer}>
           {rawPunchIn.getTime() === 0 ? (
             <>
               <RectButton
-                onPress={() => dispatch(punchIn(index))}
+                onPress={() =>
+                  dispatch(
+                    punchIn({
+                      index,
+                      month: rawDate.getMonth(),
+                      year: rawDate.getFullYear(),
+                    }),
+                  )
+                }
                 style={[
                   styles.punchItem,
                   { backgroundColor: colors.SECONDARY_GREEN },
@@ -160,7 +136,17 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
               </RectButton>
               <View style={{ width: 15 }} />
               <RectButton
-                onPress={() => handlePunchOut(rawPunchIn, rawPunchOut, index)}
+                onPress={() =>
+                  Alert.alert(
+                    "Punch-In Missing",
+                    "You must punch in before you can punch out.",
+                    [
+                      {
+                        text: "ok",
+                      },
+                    ],
+                  )
+                }
                 style={[
                   styles.punchItem,
                   { backgroundColor: colors.SECONDARY_RED },
@@ -185,7 +171,15 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
               </View>
               <View style={{ width: 15 }} />
               <RectButton
-                onPress={() => dispatch(punchOut(index))}
+                onPress={() =>
+                  dispatch(
+                    punchOut({
+                      index,
+                      month: rawDate.getMonth(),
+                      year: rawDate.getFullYear(),
+                    }),
+                  )
+                }
                 style={[
                   styles.punchItem,
                   { backgroundColor: colors.SECONDARY_RED },
@@ -223,7 +217,7 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
                   style={{ color: colors.SECONDARY_PURPLE }}
                 />
                 <Text style={styles.time}>
-                  {calculateHours(rawPunchIn.getTime(), rawPunchOut.getTime())}
+                  {calculateHours(rawPunchIn, rawPunchOut)}
                 </Text>
               </View>
             </>
@@ -248,45 +242,139 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
     });
   }, [navigation, showMore]);
 
+  useEffect(() => {
+    const today = new Date();
+    const monthData = rawYearData[today.getMonth()];
+    const sectionIndex = sectionedData.findIndex(
+      (section) => section.month === monthNames[today.getMonth()],
+    );
+    SectionListRef.current?.scrollToLocation({
+      animated: true,
+      itemIndex: monthData.length,
+      sectionIndex,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawYearData]);
+
   return (
-    <View style={styles.root}>
-      <AnimatedLayout style={{ flex: 1 }}>
-        <SectionList
-          ItemSeparatorComponent={() => <View style={{ height: 2 }} />}
-          keyExtractor={(item, index) => `${item.date}${index}`}
-          renderItem={renderItem}
-          renderSectionHeader={renderSectionHeader}
-          sections={sectionedData}
-          SectionSeparatorComponent={() => <View style={{ height: 2 }} />}
-        />
-        {showMore && (
-          <AnimatedBaseButton
-            entering={FadeInUp.duration(150)}
-            exiting={FadeOutUp.duration(150)}
-            onPress={() => setShowMore(false)}
-            rippleColor={"transparent"}
+    <AnimatedLayout style={{ flex: 1 }}>
+      <SectionList
+        stickySectionHeadersEnabled
+        extraData={rawYearData.length}
+        getItemLayout={(_, index) => ({
+          index,
+          length: ITEM_HEIGHT,
+          offset: (ITEM_HEIGHT + SEPARATOR_HEIGHT) * index,
+        })}
+        ItemSeparatorComponent={() => (
+          <View style={{ height: SEPARATOR_HEIGHT }} />
+        )}
+        keyExtractor={(item, index) => `${item.date}${item.punchIn}${index}`}
+        ref={SectionListRef}
+        renderItem={renderItem}
+        renderSectionHeader={renderSectionHeader}
+        sections={sectionedData}
+        SectionSeparatorComponent={() => (
+          <View style={{ height: SEPARATOR_HEIGHT }} />
+        )}
+        showsVerticalScrollIndicator={false}
+      />
+      {showMore && (
+        <AnimatedBaseButton
+          entering={FadeInUp.duration(150)}
+          exiting={FadeOutUp.duration(150)}
+          onPress={() => setShowMore(false)}
+          rippleColor={"transparent"}
+          style={{
+            height: "100%",
+            position: "absolute",
+            width: "100%",
+          }}
+        >
+          <Animated.View style={styles.moreContainer}>
+            <RectButton onPress={handleCalculateHours}>
+              <Text style={styles.moreText}>Calculate Hours</Text>
+            </RectButton>
+            <RectButton
+              onPress={() => setDataYear(dataYear === 2021 ? 2022 : 2021)}
+            >
+              <Text style={styles.moreText}>Change Year</Text>
+            </RectButton>
+          </Animated.View>
+        </AnimatedBaseButton>
+      )}
+      {showAddOptions && (
+        <AnimatedBaseButton
+          entering={FadeInDown.duration(150)}
+          exiting={FadeOut.duration(150)}
+          onPress={() => setShowAddOptions(false)}
+          rippleColor={"transparent"}
+          style={{
+            backgroundColor: "rgba(0,0,0,0.25)",
+            height: "100%",
+            position: "absolute",
+            width: "100%",
+          }}
+        >
+          <Animated.View
             style={{
-              height: "100%",
+              backgroundColor: colors.SECONDARY_PURPLE,
+              borderColor: colors.PRIMARY_PURPLE,
+              borderLeftWidth: 4,
+              borderRightWidth: 4,
+              borderTopWidth: 4,
+              bottom: ITEM_HEIGHT,
               position: "absolute",
               width: "100%",
             }}
           >
-            <Animated.View style={styles.moreContainer}>
-              <RectButton onPress={handleCalculateHours}>
-                <Text style={styles.moreText}>Calculate Hours</Text>
-              </RectButton>
-            </Animated.View>
-          </AnimatedBaseButton>
-        )}
-        <PanGestureHandler onGestureEvent={animatedGestureEvent}>
-          <Animated.View style={[animatedButton, styles.newDateWrapper]}>
-            <BaseButton onPress={createDay} style={styles.newDateButton}>
-              <Icon color={colors.PRIMARY_WHITE} name={"add"} size={50} />
-            </BaseButton>
+            <RectButton
+              onPress={() => {
+                setShowAddOptions(false);
+                createDay();
+              }}
+              style={styles.button}
+            >
+              <Text
+                style={{
+                  fontSize: 24,
+                  fontWeight: "bold",
+                }}
+              >
+                Quick Add
+              </Text>
+            </RectButton>
+            <View
+              style={{ backgroundColor: colors.PRIMARY_PURPLE, height: 2 }}
+            />
+            <RectButton
+              onPress={() => {
+                setShowAddOptions(false);
+                navigation.navigate("Manual Punch");
+              }}
+              style={styles.button}
+            >
+              <Text
+                style={{
+                  fontSize: 24,
+                  fontWeight: "bold",
+                }}
+              >
+                Custom Day
+              </Text>
+            </RectButton>
           </Animated.View>
-        </PanGestureHandler>
-      </AnimatedLayout>
-    </View>
+        </AnimatedBaseButton>
+      )}
+      <Animated.View style={styles.newDateWrapper}>
+        <RectButton
+          onPress={() => setShowAddOptions(!showAddOptions)}
+          style={styles.button}
+        >
+          <Icon color={colors.PRIMARY_WHITE} name={"add"} size={50} />
+        </RectButton>
+      </Animated.View>
+    </AnimatedLayout>
   );
 };
 

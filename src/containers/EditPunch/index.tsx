@@ -11,7 +11,7 @@ import {
 } from "react-native-gesture-handler";
 import { useAppDispatch, useAppSelector } from "../../redux";
 import {
-  createSelectPunchData,
+  createSelectSinglePunch,
   removeDate,
   setNotes,
   setPunchIn,
@@ -29,7 +29,13 @@ type Props = EditPunchNavigationProps & EditPunchRouteProps;
 
 const EditPunch = ({ navigation, route }: Props) => {
   const dispatch = useAppDispatch();
-  const punchData = useAppSelector(createSelectPunchData(route.params.index));
+  const punchData = useAppSelector(
+    createSelectSinglePunch({
+      index: route.params.index,
+      month: route.params.month,
+      year: route.params.year,
+    }),
+  );
   const formattedDate = formatDate(new Date(punchData?.date ?? 0));
 
   const [punchInTimePicker, setPunchInTimePicker] = useState(false);
@@ -54,8 +60,8 @@ const EditPunch = ({ navigation, route }: Props) => {
   const handleChangePunchOutTime = (date?: Date) => {
     const newDate = date ?? punchOutTime;
 
-    setPunchOutTime(newDate);
     setPunchOutTimePicker(false);
+    setPunchOutTime(newDate);
   };
 
   const handleChangeText = (text: string) => {
@@ -73,7 +79,13 @@ const EditPunch = ({ navigation, route }: Props) => {
         },
         {
           onPress: () => {
-            dispatch(removeDate(route.params.index));
+            dispatch(
+              removeDate({
+                index: route.params.index,
+                month: route.params.month,
+                year: route.params.year,
+              }),
+            );
             navigation.goBack();
           },
           style: "destructive",
@@ -83,8 +95,8 @@ const EditPunch = ({ navigation, route }: Props) => {
     );
 
   const parsePunchTimes = useCallback(() => {
-    const punchInDate = new Date(punchData?.date);
-    const punchOutDate = new Date(punchData?.date);
+    const punchInDate = new Date(punchInTime);
+    const punchOutDate = new Date(punchOutTime);
     punchInDate.setHours(punchInTime.getHours(), punchInTime.getMinutes());
     punchOutDate.setHours(punchOutTime.getHours(), punchOutTime.getMinutes());
 
@@ -92,6 +104,8 @@ const EditPunch = ({ navigation, route }: Props) => {
       setPunchIn({
         date: punchInDate.getTime(),
         index: route.params.index,
+        month: route.params.month,
+        year: route.params.year,
       }),
     );
 
@@ -99,13 +113,17 @@ const EditPunch = ({ navigation, route }: Props) => {
       setPunchOut({
         date: punchOutDate.getTime(),
         index: route.params.index,
+        month: route.params.month,
+        year: route.params.year,
       }),
     );
 
     dispatch(
       setNotes({
         index: route.params.index,
+        month: route.params.month,
         notes: additionalText,
+        year: route.params.year,
       }),
     );
 
@@ -114,10 +132,11 @@ const EditPunch = ({ navigation, route }: Props) => {
     additionalText,
     dispatch,
     navigation,
-    punchData?.date,
     punchInTime,
     punchOutTime,
     route.params.index,
+    route.params.month,
+    route.params.year,
   ]);
 
   useLayoutEffect(() => {
@@ -179,7 +198,7 @@ const EditPunch = ({ navigation, route }: Props) => {
         <Text
           style={[styles.time, { backgroundColor: colors.SECONDARY_PURPLE }]}
         >
-          {calculateHours(punchInTime.getTime(), punchOutTime.getTime())}
+          {calculateHours(punchInTime, punchOutTime)}
         </Text>
       </View>
       {punchInTimePicker && (

@@ -14,7 +14,6 @@ export default StyleSheet.create({
   },
   buttonText: { fontSize: 30, fontWeight: "bold" },
   date: {
-    // alignSelf: "center",
     color: colors.PRIMARY_WHITE,
     fontSize: 20,
     fontWeight: "bold",

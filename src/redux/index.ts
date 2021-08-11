@@ -14,20 +14,21 @@ import rootReducer from "./rootReducer";
 
 const persistConfig = {
   key: "root",
-  version: 1,
   storage: AsyncStorage,
+  version: 1,
+  // blacklist: ["punches"],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 const store = configureStore({
-  reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
     }),
+  reducer: persistedReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;
