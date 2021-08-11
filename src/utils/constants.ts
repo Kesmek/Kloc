@@ -1,8 +1,7 @@
 import { initialWindowMetrics, Metrics } from "react-native-safe-area-context";
+import { dayTypes, monthTypes } from "../types/constants";
 
 export const { frame, insets } = initialWindowMetrics as Metrics;
-
-export const headerHeight = 60 + insets.top;
 
 export const colors = {
   BACKGROUND: "#444444",
@@ -16,13 +15,13 @@ export const colors = {
   PRIMARY_RED: "#FF0000",
   PRIMARY_WHITE: "#FFFFFF",
   SECONDARY_GREEN: "#99FF88",
-  SECONDARY_PURPLE: "#DDBBFF",
+  SECONDARY_PURPLE: "#BBAAFF",
   SECONDARY_RED: "#FF7788",
   SECONDARY_WHITE: "#A5A5A5",
   YELLOW: "#FFFF00",
 };
 
-export const monthNames = [
+export const monthNames: monthTypes[] = [
   "January",
   "February",
   "March",
@@ -37,12 +36,12 @@ export const monthNames = [
   "December",
 ];
 
-export const dayNames = [
+export const dayNames: dayTypes[] = [
   "Sunday",
   "Monday",
   "Tuesday",
   "Wednesday",
-  "thursday",
+  "Thursday",
   "Friday",
   "Saturday",
 ];
