@@ -1,21 +1,21 @@
 const numberToDay = (day: number) => {
   switch (day) {
     case 0:
-      return "Sunday";
+      return "Sun";
     case 1:
-      return "Monday";
+      return "Mon";
     case 2:
-      return "Tuesday";
+      return "Tues";
     case 3:
-      return "Wednesday";
+      return "Wed";
     case 4:
-      return "Thursday";
+      return "Thurs";
     case 5:
-      return "Friday";
+      return "Fri";
     case 6:
-      return "Saturday";
+      return "Sat";
     default:
-      return "Sunday";
+      return "Sun";
   }
 };
 
@@ -106,11 +106,12 @@ const formatDate = (date: Date) => {
   };
 };
 
-const calculateHours = (punchIn: number, punchOut: number) => {
-  if (punchIn === 0 || punchOut === 0) return "--:--";
+const calculateHours = (punchIn: Date, punchOut: Date) => {
+  if (punchIn.getTime() === 0 || punchOut.getTime() === 0) return "--:--";
 
-  const diff = punchOut - punchIn;
-  const rawMinutes = Math.round(diff / 1000 / 60);
+  const diff = new Date(punchOut.getTime() - punchIn.getTime());
+
+  const rawMinutes = Math.round(diff.getTime() / 1000 / 60);
   const hours = Math.floor(rawMinutes / 60);
   const minutes = rawMinutes % 60;
 
