@@ -11,6 +11,7 @@ import { RootStackParamList } from "./src/types/navigation";
 import { enableScreens } from "react-native-screens";
 import Punches from "./src/containers/Punches";
 import EditPunch from "./src/containers/EditPunch";
+import ManualPunch from "./src/containers/ManualPunch";
 
 enableScreens();
 
@@ -51,6 +52,14 @@ const App = () => {
                 component={EditPunch}
                 name="Edit Punch"
                 options={{ animation: "slide_from_right" }}
+              />
+              <Screen
+                component={ManualPunch}
+                name="Manual Punch"
+                options={{ animation: "slide_from_right" }}
+                // options={{
+                //   presentation: "transparentModal",
+                // }}
               />
             </Navigator>
           </NavigationContainer>
