@@ -1,5 +1,4 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit";
-import { monthNames } from "../utils/constants";
 import { RootState } from "./index";
 
 export type PunchRecord = {
@@ -11,11 +10,26 @@ export type PunchRecord = {
 
 type PunchState = {
   [year: number]: PunchRecord[][];
+  focusedYear: number;
 };
 
-const initialState: PunchState = {};
-
-const selectPunches = (state: RootState) => state.punches;
+const initialState: PunchState = {
+  focusedYear: new Date().getFullYear(),
+  [new Date().getFullYear()]: [
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+  ] as PunchRecord[][],
+};
 
 const mainSlice = createSlice({
   initialState,
@@ -67,66 +81,64 @@ const mainSlice = createSlice({
       });
     },
     punchIn: (state, action) => {
-      const { index, month, year } = action.payload;
-      state[year][month][index].punchIn = Date.now();
+      const { index, month } = action.payload;
+      state[state.focusedYear][month][index].punchIn = Date.now();
     },
     punchOut: (state, action) => {
-      const { index, month, year } = action.payload;
-      state[year][month][index].punchOut = Date.now();
+      const { index, month } = action.payload;
+      state[state.focusedYear][month][index].punchOut = Date.now();
     },
     removeDate: (state, action) => {
-      const { index, month, year } = action.payload;
-      state[year][month].splice(index, 1);
+      const { index, month } = action.payload;
+      state[state.focusedYear][month].splice(index, 1);
+    },
+    setFocusedYear: (state, action) => {
+      const { year } = action.payload;
+      state.focusedYear = year;
     },
     setNotes: (state, action) => {
-      const { index, month, year, notes } = action.payload;
-      state[year][month][index].notes = notes;
+      const { index, month, notes } = action.payload;
+      state[state.focusedYear][month][index].notes = notes;
     },
     setPunchIn: (state, action) => {
-      const { index, month, year, date } = action.payload;
-      state[year][month][index].punchIn = date;
+      const { index, month, date } = action.payload;
+      state[state.focusedYear][month][index].punchIn = date;
     },
     setPunchOut: (state, action) => {
-      const { index, month, year, date } = action.payload;
-      state[year][month][index].punchOut = date;
+      const { index, month, date } = action.payload;
+      state[state.focusedYear][month][index].punchOut = date;
     },
   },
 });
 
+const selectPunches = (state: RootState) => state.punches;
+const selectFocusedYear = (state: RootState) => {
+  if (!state.punches.focusedYear) {
+    setFocusedYear({ year: new Date().getFullYear() });
+  }
+  return state.punches.focusedYear;
+};
+
 export const createSelectPunches = () =>
   createSelector(selectPunches, (punches) => punches);
 
-export const createSelectYearData = (year: number) =>
-  createSelector(selectPunches, (data) => data?.[year] ?? []);
+export const createSelectFocusedYear = () =>
+  createSelector(selectFocusedYear, (year) => year);
 
-export const createSelectSectionedPunches = (year: number) =>
-  createSelector(selectPunches, (data) => {
-    const yearData = data?.[year];
-
-    //Only return sections with data
-    const sectionedPunches =
-      yearData
-        ?.map((value, index) => {
-          const month = monthNames[index];
-          return {
-            data: value,
-            month: month,
-          };
-        })
-        .filter((section) => section.data.length) ?? [];
-
-    return sectionedPunches;
-  });
+export const createSelectYearData = () =>
+  createSelector(selectPunches, (data) => data[data.focusedYear] ?? []);
 
 export const createSelectSinglePunch = ({
   index,
   month,
-  year,
 }: {
   index: number;
   month: number;
-  year: number;
-}) => createSelector(selectPunches, (data) => data?.[year]?.[month]?.[index]);
+}) =>
+  createSelector(
+    selectPunches,
+    (data) => data[data.focusedYear]?.[month]?.[index],
+  );
 
 export const {
   addCompletePunch,
@@ -134,6 +146,7 @@ export const {
   removeDate,
   punchIn,
   punchOut,
+  setFocusedYear,
   setPunchIn,
   setPunchOut,
   setNotes,

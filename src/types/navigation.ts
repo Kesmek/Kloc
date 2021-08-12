@@ -3,8 +3,10 @@ import { StackScreenProps } from "@react-navigation/stack";
 
 type RootStackParamList = {
   Punches: undefined;
-  "Edit Punch": { index: number; month: number; year: number };
+  "Edit Punch": { index: number; month: number };
   "Manual Punch": undefined;
+  "Year Selector": undefined;
+  Calculator: undefined;
 };
 
 type PunchesNavigationProps = StackScreenProps<RootStackParamList, "Punches">;
@@ -16,13 +18,23 @@ type CustomPunchNavigationProps = StackScreenProps<
   RootStackParamList,
   "Manual Punch"
 >;
+type YearSelectorNavigationProps = StackScreenProps<
+  RootStackParamList,
+  "Year Selector"
+>;
+type CalculatorNavigationProps = StackScreenProps<
+  RootStackParamList,
+  "Calculator"
+>;
 
 type EditPunchRouteProps = RouteProp<RootStackParamList, "Edit Punch">;
 
 export type {
-  PunchesNavigationProps,
-  EditPunchNavigationProps,
-  RootStackParamList,
-  EditPunchRouteProps,
+  CalculatorNavigationProps,
   CustomPunchNavigationProps,
+  EditPunchNavigationProps,
+  EditPunchRouteProps,
+  PunchesNavigationProps,
+  RootStackParamList,
+  YearSelectorNavigationProps,
 };

@@ -33,7 +33,6 @@ const EditPunch = ({ navigation, route }: Props) => {
     createSelectSinglePunch({
       index: route.params.index,
       month: route.params.month,
-      year: route.params.year,
     }),
   );
   const formattedDate = formatDate(new Date(punchData?.date ?? 0));
@@ -83,7 +82,6 @@ const EditPunch = ({ navigation, route }: Props) => {
               removeDate({
                 index: route.params.index,
                 month: route.params.month,
-                year: route.params.year,
               }),
             );
             navigation.goBack();
@@ -105,7 +103,6 @@ const EditPunch = ({ navigation, route }: Props) => {
         date: punchInDate.getTime(),
         index: route.params.index,
         month: route.params.month,
-        year: route.params.year,
       }),
     );
 
@@ -114,7 +111,6 @@ const EditPunch = ({ navigation, route }: Props) => {
         date: punchOutDate.getTime(),
         index: route.params.index,
         month: route.params.month,
-        year: route.params.year,
       }),
     );
 
@@ -123,7 +119,6 @@ const EditPunch = ({ navigation, route }: Props) => {
         index: route.params.index,
         month: route.params.month,
         notes: additionalText,
-        year: route.params.year,
       }),
     );
 
@@ -136,7 +131,6 @@ const EditPunch = ({ navigation, route }: Props) => {
     punchOutTime,
     route.params.index,
     route.params.month,
-    route.params.year,
   ]);
 
   useLayoutEffect(() => {

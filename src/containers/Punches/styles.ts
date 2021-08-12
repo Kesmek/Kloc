@@ -11,7 +11,7 @@ export default StyleSheet.create({
     justifyContent: "center",
     width: "100%",
   },
-  date: { fontSize: 18, fontWeight: "bold" },
+  date: { color: colors.BLACK, fontSize: 18, fontWeight: "bold" },
   dateContainer: {
     flex: 1,
   },
@@ -30,9 +30,9 @@ export default StyleSheet.create({
   },
   moreContainer: {
     backgroundColor: colors.BACKGROUND,
-    borderBottomWidth: 2,
-    borderColor: "#222222",
-    borderLeftWidth: 2,
+    borderBottomWidth: 3,
+    borderColor: colors.BLACK,
+    borderLeftWidth: 3,
     position: "absolute",
     right: 0,
     width: 225,

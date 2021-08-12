@@ -11,24 +11,31 @@ import {
   TextInput,
 } from "react-native-gesture-handler";
 import { useAppDispatch, useAppSelector } from "../../redux";
-import { addCompletePunch, createSelectYearData } from "../../redux/punches";
+import {
+  addCompletePunch,
+  createSelectFocusedYear,
+  createSelectYearData,
+} from "../../redux/punches";
 import { colors } from "../../utils/constants";
 import { calculateHours, formatDate } from "../../utils/functions";
 import styles from "../EditPunch/styles";
 
+const today = new Date();
+
 const ManualPunch = ({ navigation }: CustomPunchNavigationProps) => {
+  const focusedYear = useAppSelector(createSelectFocusedYear());
+  const punchData = useAppSelector(createSelectYearData());
+  const dispatch = useAppDispatch();
+
   const [punchInDatePicker, setPunchInDatePicker] = useState(true);
   const [punchInTimePicker, setPunchInTimePicker] = useState(false);
-  const [punchInTime, setPunchInTime] = useState(new Date());
+  const [punchInTime, setPunchInTime] = useState(
+    new Date(focusedYear, today.getMonth()),
+  );
   const [punchOutTimePicker, setPunchOutTimePicker] = useState(false);
   const [punchOutDatePicker, setPunchOutDatePicker] = useState(false);
   const [punchOutTime, setPunchOutTime] = useState(new Date());
   const [additionalText, setAdditionalText] = useState<string | undefined>();
-
-  const punchData = useAppSelector(
-    createSelectYearData(punchInTime.getFullYear()),
-  );
-  const dispatch = useAppDispatch();
 
   const handleChangePunchInTime = (date?: Date) => {
     const newDate = date ?? punchInTime;
@@ -42,7 +49,20 @@ const ManualPunch = ({ navigation }: CustomPunchNavigationProps) => {
     const newDate = date ?? punchOutTime;
 
     setPunchOutTimePicker(false);
-    setPunchOutTime(newDate);
+
+    if (newDate.getTime() < punchInTime.getTime()) {
+      Alert.alert(
+        "Punch Out Error",
+        "You cannot set a punch-out time that is earlier than your punch-in time. Please double check the times you input.",
+        [
+          {
+            text: "ok",
+          },
+        ],
+      );
+    } else {
+      setPunchOutTime(newDate);
+    }
   };
 
   const handleChangePunchInDate = (date?: Date) => {

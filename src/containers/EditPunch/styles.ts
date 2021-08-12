@@ -19,8 +19,9 @@ export default StyleSheet.create({
     fontWeight: "bold",
   },
   notesInput: {
-    backgroundColor: colors.BACKGROUND,
+    backgroundColor: colors.BLACK,
     borderRadius: 10,
+    color: colors.PRIMARY_WHITE,
     fontSize: 17,
     marginTop: 5,
     paddingHorizontal: 10,

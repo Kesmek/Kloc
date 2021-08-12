@@ -6,6 +6,7 @@ import {
   SectionList,
   SectionListData,
   SectionListRenderItem,
+  StyleSheet,
 } from "react-native";
 import {
   BaseButton,
@@ -26,8 +27,8 @@ import {
   PunchRecord,
   punchIn,
   punchOut,
-  createSelectSectionedPunches,
   createSelectYearData,
+  createSelectFocusedYear,
 } from "../../redux/punches";
 import { PunchesNavigationProps } from "../../types/navigation";
 import { colors, monthNames } from "../../utils/constants";
@@ -40,15 +41,26 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
   const SectionListRef = useRef<SectionList>(null);
   const [showMore, setShowMore] = useState(false);
   const [showAddOptions, setShowAddOptions] = useState(false);
-  const [dataYear, setDataYear] = useState(new Date().getFullYear());
 
-  const sectionedData = useAppSelector(createSelectSectionedPunches(dataYear));
-  const rawYearData = useAppSelector(createSelectYearData(dataYear));
+  const focusedYear = useAppSelector(createSelectFocusedYear());
+  const rawYearData = useAppSelector(createSelectYearData());
+  //Convert raw year data into sections for SectionList
+  const sectionedData =
+    rawYearData
+      ?.map((value, index) => {
+        const month = monthNames[index];
+        return {
+          data: value,
+          month: month,
+        };
+      })
+      .filter((section) => section.data.length) ?? [];
   const dispatch = useAppDispatch();
 
   const createDay = () => {
     const today = new Date();
-    const matches = rawYearData[today.getMonth()].find(
+    today.setFullYear(focusedYear);
+    const matches = rawYearData[today.getMonth()]?.find(
       (date) => new Date(date.date).getDate() === today.getDate(),
     );
 
@@ -69,6 +81,7 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
 
   const handleCalculateHours = () => {
     setShowMore(false);
+    navigation.navigate("Calculator");
   };
 
   const renderSectionHeader = ({
@@ -95,7 +108,6 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
           navigation.navigate("Edit Punch", {
             index,
             month: rawDate.getMonth(),
-            year: dataYear,
           });
         }}
         style={styles.itemContainer}
@@ -248,11 +260,14 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
     const sectionIndex = sectionedData.findIndex(
       (section) => section.month === monthNames[today.getMonth()],
     );
-    SectionListRef.current?.scrollToLocation({
-      animated: true,
-      itemIndex: monthData.length,
-      sectionIndex,
-    });
+
+    if (sectionIndex >= 0) {
+      SectionListRef.current?.scrollToLocation({
+        animated: true,
+        itemIndex: monthData?.length ?? 0,
+        sectionIndex,
+      });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rawYearData]);
 
@@ -285,20 +300,19 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
           exiting={FadeOutUp.duration(150)}
           onPress={() => setShowMore(false)}
           rippleColor={"transparent"}
-          style={{
-            height: "100%",
-            position: "absolute",
-            width: "100%",
-          }}
+          style={StyleSheet.absoluteFill}
         >
           <Animated.View style={styles.moreContainer}>
             <RectButton onPress={handleCalculateHours}>
               <Text style={styles.moreText}>Calculate Hours</Text>
             </RectButton>
             <RectButton
-              onPress={() => setDataYear(dataYear === 2021 ? 2022 : 2021)}
+              onPress={() => {
+                setShowMore(false);
+                navigation.navigate("Year Selector");
+              }}
             >
-              <Text style={styles.moreText}>Change Year</Text>
+              <Text style={styles.moreText}>Select Year</Text>
             </RectButton>
           </Animated.View>
         </AnimatedBaseButton>
@@ -309,12 +323,12 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
           exiting={FadeOut.duration(150)}
           onPress={() => setShowAddOptions(false)}
           rippleColor={"transparent"}
-          style={{
-            backgroundColor: "rgba(0,0,0,0.25)",
-            height: "100%",
-            position: "absolute",
-            width: "100%",
-          }}
+          style={[
+            {
+              backgroundColor: "rgba(0,0,0,0.25)",
+            },
+            StyleSheet.absoluteFill,
+          ]}
         >
           <Animated.View
             style={{
@@ -328,25 +342,29 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
               width: "100%",
             }}
           >
-            <RectButton
-              onPress={() => {
-                setShowAddOptions(false);
-                createDay();
-              }}
-              style={styles.button}
-            >
-              <Text
-                style={{
-                  fontSize: 24,
-                  fontWeight: "bold",
-                }}
-              >
-                Quick Add
-              </Text>
-            </RectButton>
-            <View
-              style={{ backgroundColor: colors.PRIMARY_PURPLE, height: 2 }}
-            />
+            {focusedYear === new Date().getFullYear() && (
+              <>
+                <RectButton
+                  onPress={() => {
+                    setShowAddOptions(false);
+                    createDay();
+                  }}
+                  style={styles.button}
+                >
+                  <Text
+                    style={{
+                      fontSize: 24,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Quick Add
+                  </Text>
+                </RectButton>
+                <View
+                  style={{ backgroundColor: colors.PRIMARY_PURPLE, height: 2 }}
+                />
+              </>
+            )}
             <RectButton
               onPress={() => {
                 setShowAddOptions(false);
