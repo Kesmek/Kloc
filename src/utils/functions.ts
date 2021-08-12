@@ -118,4 +118,4 @@ const calculateHours = (punchIn: Date, punchOut: Date) => {
   return formatTime(hours, minutes);
 };
 
-export { formatDate, calculateHours };
+export { formatDate, calculateHours, formatTime };

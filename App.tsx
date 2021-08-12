@@ -5,13 +5,15 @@ import store from "./src/redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistStore } from "redux-persist";
 import { NavigationContainer, Theme } from "@react-navigation/native";
-import { colors } from "./src/utils/constants";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { RootStackParamList } from "./src/types/navigation";
 import { enableScreens } from "react-native-screens";
 import Punches from "./src/containers/Punches";
 import EditPunch from "./src/containers/EditPunch";
 import ManualPunch from "./src/containers/ManualPunch";
+import YearSelector from "./src/containers/YearSelector";
+import { colors } from "./src/utils/constants";
+import Calculator from "./src/containers/Calculator";
 
 enableScreens();
 
@@ -25,13 +27,13 @@ const App = () => {
   StatusBar.setTranslucent(true);
   StatusBar.setBackgroundColor("transparent");
 
-  const darkTheme: Theme = {
+  const theme: Theme = {
     colors: {
-      background: colors.BLACK,
+      background: colors.BACKGROUND,
       border: colors.BORDER,
       card: colors.BLACK,
       notification: colors.PRIMARY_PURPLE,
-      primary: colors.PRIMARY_WHITE,
+      primary: colors.SECONDARY_PURPLE,
       text: colors.PRIMARY_WHITE,
     },
     dark: true,
@@ -41,10 +43,11 @@ const App = () => {
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <SafeAreaProvider>
-          <NavigationContainer theme={darkTheme}>
+          <NavigationContainer theme={theme}>
             <Navigator
               screenOptions={{
                 gestureEnabled: false,
+                headerShadowVisible: false,
               }}
             >
               <Screen component={Punches} name="Punches" />
@@ -57,9 +60,20 @@ const App = () => {
                 component={ManualPunch}
                 name="Manual Punch"
                 options={{ animation: "slide_from_right" }}
-                // options={{
-                //   presentation: "transparentModal",
-                // }}
+              />
+              <Screen
+                component={YearSelector}
+                name="Year Selector"
+                options={{
+                  animation: "fade",
+                  headerShown: false,
+                  presentation: "transparentModal",
+                }}
+              />
+              <Screen
+                component={Calculator}
+                name="Calculator"
+                options={{ animation: "slide_from_bottom" }}
               />
             </Navigator>
           </NavigationContainer>
