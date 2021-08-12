@@ -102,6 +102,18 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
     const rawPunchOut = new Date(item.punchOut ?? 0);
     const date = formatDate(rawDate);
 
+    const renderNotes = () => {
+      if (item.notes) {
+        return item.notes.length > 15 ? (
+          <Text style={styles.dayOfWeek}>{item?.notes.substr(0, 15)}...</Text>
+        ) : (
+          <Text style={styles.dayOfWeek}>{item.notes}</Text>
+        );
+      } else {
+        return undefined;
+      }
+    };
+
     return (
       <RectButton
         onPress={() => {
@@ -116,11 +128,7 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
           <Text
             style={styles.date}
           >{`${date.day}${date.suffix}, ${date.dayOfWeek}.`}</Text>
-          {item.notes && item.notes.length > 15 ? (
-            <Text style={styles.dayOfWeek}>{item.notes.substr(0, 15)}...</Text>
-          ) : (
-            item.notes && <Text style={styles.dayOfWeek}>{item.notes}</Text>
-          )}
+          {renderNotes()}
         </View>
         <View style={styles.punchContainer}>
           {rawPunchIn.getTime() === 0 ? (
