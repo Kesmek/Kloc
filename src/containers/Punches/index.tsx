@@ -31,7 +31,7 @@ import {
   createSelectFocusedYear,
 } from "../../redux/punches";
 import { PunchesNavigationProps } from "../../types/navigation";
-import { colors, monthNames } from "../../utils/constants";
+import { colors, frame, monthNames } from "../../utils/constants";
 import { calculateHours, formatDate } from "../../utils/functions";
 import styles, { ITEM_HEIGHT, SEPARATOR_HEIGHT } from "./styles";
 
@@ -280,10 +280,9 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
   }, [rawYearData]);
 
   return (
-    <AnimatedLayout style={{ flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <SectionList
         stickySectionHeadersEnabled
-        extraData={rawYearData.length}
         getItemLayout={(_, index) => ({
           index,
           length: ITEM_HEIGHT,
@@ -302,105 +301,114 @@ const Punches = ({ navigation }: PunchesNavigationProps) => {
         )}
         showsVerticalScrollIndicator={false}
       />
-      {showMore && (
-        <AnimatedBaseButton
-          entering={FadeInUp.duration(150)}
-          exiting={FadeOutUp.duration(150)}
-          onPress={() => setShowMore(false)}
-          rippleColor={"transparent"}
-          style={StyleSheet.absoluteFill}
-        >
-          <Animated.View style={styles.moreContainer}>
-            <RectButton onPress={handleCalculateHours}>
-              <Text style={styles.moreText}>Calculate Hours</Text>
-            </RectButton>
-            <RectButton
-              onPress={() => {
-                setShowMore(false);
-                navigation.navigate("Year Selector");
-              }}
-            >
-              <Text style={styles.moreText}>Select Year</Text>
-            </RectButton>
-          </Animated.View>
-        </AnimatedBaseButton>
-      )}
-      {showAddOptions && (
-        <AnimatedBaseButton
-          entering={FadeInDown.duration(150)}
-          exiting={FadeOut.duration(150)}
-          onPress={() => setShowAddOptions(false)}
-          rippleColor={"transparent"}
-          style={[
-            {
-              backgroundColor: "rgba(0,0,0,0.25)",
-            },
-            StyleSheet.absoluteFill,
-          ]}
-        >
-          <Animated.View
-            style={{
-              backgroundColor: colors.SECONDARY_PURPLE,
-              borderColor: colors.PRIMARY_PURPLE,
-              borderLeftWidth: 4,
-              borderRightWidth: 4,
-              borderTopWidth: 4,
-              bottom: ITEM_HEIGHT,
-              position: "absolute",
-              width: "100%",
-            }}
+      <AnimatedLayout
+        style={[
+          StyleSheet.absoluteFillObject,
+          { top: showAddOptions || showMore ? 0 : frame.height },
+        ]}
+      >
+        {showMore && (
+          <AnimatedBaseButton
+            entering={FadeInUp.duration(150)}
+            exiting={FadeOutUp.duration(150)}
+            onPress={() => setShowMore(false)}
+            rippleColor={"transparent"}
+            style={StyleSheet.absoluteFill}
           >
-            {focusedYear === new Date().getFullYear() && (
-              <>
-                <RectButton
-                  onPress={() => {
-                    setShowAddOptions(false);
-                    createDay();
-                  }}
-                  style={styles.button}
-                >
-                  <Text
-                    style={{
-                      fontSize: 24,
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Quick Add
-                  </Text>
-                </RectButton>
-                <View
-                  style={{ backgroundColor: colors.PRIMARY_PURPLE, height: 2 }}
-                />
-              </>
-            )}
-            <RectButton
-              onPress={() => {
-                setShowAddOptions(false);
-                navigation.navigate("Manual Punch");
-              }}
-              style={styles.button}
-            >
-              <Text
-                style={{
-                  fontSize: 24,
-                  fontWeight: "bold",
+            <Animated.View style={styles.moreContainer}>
+              <RectButton onPress={handleCalculateHours}>
+                <Text style={styles.moreText}>Calculate Hours</Text>
+              </RectButton>
+              <RectButton
+                onPress={() => {
+                  setShowMore(false);
+                  navigation.navigate("Year Selector");
                 }}
               >
-                Custom Day
-              </Text>
-            </RectButton>
-          </Animated.View>
-        </AnimatedBaseButton>
-      )}
-      <Animated.View style={styles.newDateWrapper}>
+                <Text style={styles.moreText}>Select Year</Text>
+              </RectButton>
+            </Animated.View>
+          </AnimatedBaseButton>
+        )}
+        {showAddOptions && (
+          <AnimatedBaseButton
+            entering={FadeInDown.duration(150)}
+            exiting={FadeOut.duration(150)}
+            onPress={() => setShowAddOptions(false)}
+            rippleColor={"transparent"}
+            style={[
+              {
+                backgroundColor: "rgba(0,0,0,0.25)",
+              },
+              StyleSheet.absoluteFill,
+            ]}
+          >
+            <Animated.View
+              style={{
+                backgroundColor: colors.SECONDARY_PURPLE,
+                borderBottomWidth: 0,
+                borderColor: colors.PRIMARY_PURPLE,
+                borderWidth: 4,
+                bottom: ITEM_HEIGHT,
+                position: "absolute",
+                width: "100%",
+              }}
+            >
+              {focusedYear === new Date().getFullYear() && (
+                <>
+                  <RectButton
+                    onPress={() => {
+                      setShowAddOptions(false);
+                      createDay();
+                    }}
+                    style={styles.button}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 24,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Quick Add
+                    </Text>
+                  </RectButton>
+                  <View
+                    style={{
+                      backgroundColor: colors.PRIMARY_PURPLE,
+                      height: 2,
+                    }}
+                  />
+                </>
+              )}
+              <RectButton
+                onPress={() => {
+                  setShowAddOptions(false);
+                  navigation.navigate("Manual Punch");
+                }}
+                style={styles.button}
+              >
+                <Text
+                  style={{
+                    fontSize: 24,
+                    fontWeight: "bold",
+                  }}
+                >
+                  Custom Day
+                </Text>
+              </RectButton>
+            </Animated.View>
+          </AnimatedBaseButton>
+        )}
+      </AnimatedLayout>
+      <View style={styles.newDateWrapper}>
         <RectButton
           onPress={() => setShowAddOptions(!showAddOptions)}
           style={styles.button}
         >
           <Icon color={colors.PRIMARY_WHITE} name={"add"} size={50} />
         </RectButton>
-      </Animated.View>
-    </AnimatedLayout>
+      </View>
+    </View>
   );
 };
 
