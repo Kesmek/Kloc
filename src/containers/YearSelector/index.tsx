@@ -1,9 +1,9 @@
 import { View, StyleSheet, ListRenderItem, Text } from "react-native";
 import { RectButton, FlatList } from "react-native-gesture-handler";
-import { useAppDispatch, useAppSelector } from "../../redux";
-import { createSelectFocusedYear, setFocusedYear } from "../../redux/punches";
-import { YearSelectorNavigationProps } from "../../types/navigation";
-import { colors } from "../../utils/constants";
+import { useAppDispatch, useAppSelector } from "src/redux";
+import { createSelectFocusedYear, setFocusedYear } from "src/redux/punches";
+import { YearSelectorNavigationProps } from "src/types/navigation";
+import { colors } from "src/utils/constants";
 
 const years: number[] = [];
 

@@ -1,5 +1,5 @@
 import { initialWindowMetrics, Metrics } from "react-native-safe-area-context";
-import { dayTypes, monthTypes } from "../types/constants";
+import { dayTypes, monthTypes } from "src/types/constants";
 
 export const { frame, insets } = initialWindowMetrics as Metrics;
 

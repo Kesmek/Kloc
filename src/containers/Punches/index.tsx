@@ -21,7 +21,7 @@ import Animated, {
   FadeOutUp,
 } from "react-native-reanimated";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { useAppDispatch, useAppSelector } from "../../redux";
+import { useAppDispatch, useAppSelector } from "src/redux";
 import {
   addDate,
   PunchRecord,
@@ -29,10 +29,10 @@ import {
   punchOut,
   createSelectYearData,
   createSelectFocusedYear,
-} from "../../redux/punches";
-import { PunchesNavigationProps } from "../../types/navigation";
-import { colors, frame, monthNames } from "../../utils/constants";
-import { calculateHours, formatDate } from "../../utils/functions";
+} from "src/redux/punches";
+import { PunchesNavigationProps } from "src/types/navigation";
+import { colors, frame, monthNames } from "src/utils/constants";
+import { calculateHours, formatDate } from "src/utils/functions";
 import styles, { ITEM_HEIGHT, SEPARATOR_HEIGHT } from "./styles";
 
 const AnimatedBaseButton = Animated.createAnimatedComponent(BaseButton);

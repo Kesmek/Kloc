@@ -9,20 +9,20 @@ import {
   RectButton,
   TextInput,
 } from "react-native-gesture-handler";
-import { useAppDispatch, useAppSelector } from "../../redux";
+import { useAppDispatch, useAppSelector } from "src/redux";
 import {
   createSelectSinglePunch,
   removeDate,
   setNotes,
   setPunchIn,
   setPunchOut,
-} from "../../redux/punches";
+} from "src/redux/punches";
 import {
   EditPunchNavigationProps,
   EditPunchRouteProps,
-} from "../../types/navigation";
-import { colors } from "../../utils/constants";
-import { calculateHours, formatDate } from "../../utils/functions";
+} from "src/types/navigation";
+import { colors } from "src/utils/constants";
+import { calculateHours, formatDate } from "src/utils/functions";
 import styles from "./styles";
 
 type Props = EditPunchNavigationProps & EditPunchRouteProps;

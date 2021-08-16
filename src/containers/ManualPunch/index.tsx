@@ -1,4 +1,4 @@
-import { CustomPunchNavigationProps } from "../../types/navigation";
+import { CustomPunchNavigationProps } from "src/types/navigation";
 import RNDateTimePicker, {
   Event,
 } from "@react-native-community/datetimepicker";
@@ -10,15 +10,15 @@ import {
   RectButton,
   TextInput,
 } from "react-native-gesture-handler";
-import { useAppDispatch, useAppSelector } from "../../redux";
+import { useAppDispatch, useAppSelector } from "src/redux";
 import {
   addCompletePunch,
   createSelectFocusedYear,
   createSelectYearData,
-} from "../../redux/punches";
-import { colors } from "../../utils/constants";
-import { calculateHours, formatDate } from "../../utils/functions";
-import styles from "../EditPunch/styles";
+} from "src/redux/punches";
+import { colors } from "src/utils/constants";
+import { calculateHours, formatDate } from "src/utils/functions";
+import styles from "src/containers/EditPunch/styles";
 
 const today = new Date();
 

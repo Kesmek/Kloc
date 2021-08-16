@@ -10,10 +10,10 @@ import {
   TextInput,
 } from "react-native-gesture-handler";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { useAppSelector } from "../../redux";
-import { createSelectPunches } from "../../redux/punches";
-import { colors } from "../../utils/constants";
-import { formatDate } from "../../utils/functions";
+import { useAppSelector } from "src/redux";
+import { createSelectPunches } from "src/redux/punches";
+import { colors } from "src/utils/constants";
+import { formatDate } from "src/utils/functions";
 import styles from "./styles";
 const minutes: number[] = [];
 
