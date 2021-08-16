@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { colors } from "src/utils/constants";
+import { colors } from "puncher/src/utils/constants";
 
 export const SEPARATOR_HEIGHT = 2;
 export const ITEM_HEIGHT = 65;

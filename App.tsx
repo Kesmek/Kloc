@@ -1,19 +1,19 @@
 import { LogBox, StatusBar } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
-import store from "./src/redux";
+import store from "puncher/src/redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { persistStore } from "redux-persist";
 import { NavigationContainer, Theme } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { RootStackParamList } from "./src/types/navigation";
+import { RootStackParamList } from "puncher/src/types/navigation";
 import { enableScreens } from "react-native-screens";
-import Punches from "./src/containers/Punches";
-import EditPunch from "./src/containers/EditPunch";
-import ManualPunch from "./src/containers/ManualPunch";
-import YearSelector from "./src/containers/YearSelector";
-import { colors } from "./src/utils/constants";
-import Calculator from "./src/containers/Calculator";
+import Punches from "puncher/src/containers/Punches";
+import EditPunch from "puncher/src/containers/EditPunch";
+import ManualPunch from "puncher/src/containers/ManualPunch";
+import YearSelector from "puncher/src/containers/YearSelector";
+import { colors } from "puncher/src/utils/constants";
+import Calculator from "puncher/src/containers/Calculator";
 
 enableScreens();
 

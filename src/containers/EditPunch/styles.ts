@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { colors } from "src/utils/constants";
+import { colors } from "puncher/src/utils/constants";
 
 export default StyleSheet.create({
   button: {
