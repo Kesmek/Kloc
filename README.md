@@ -1,5 +1,5 @@
 # Puncher
-A small app to locally track punch in/out times for shift workers. This app is developed as a secondary source to track your hours as it is assumed your occupation will track your hours independently. This app is for your own bookkeeping and should not be used as proof of work as all punch records were intentionally made editable.
+A small Android app to locally track punch in/out times for shift workers. This app is developed as a secondary source to track your hours as it is assumed your occupation will track your hours independently. This app is for your own bookkeeping and should not be used as proof of work as all punch records were intentionally made editable.
 
 ## Features
 - Track punch in/out times by month
