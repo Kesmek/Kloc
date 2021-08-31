@@ -67,6 +67,7 @@ __tests__
 
 # Security
 Password.txt
+upload-keystore.jks
 
 # Bookkeeping
 TODO.txt
