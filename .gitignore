@@ -64,3 +64,9 @@ buck-out/
 
 # testing files
 __tests__
+
+# Security
+Password.txt
+
+# Bookkeeping
+TODO.txt
