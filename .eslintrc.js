@@ -19,5 +19,6 @@ module.exports = {
     'prettier/prettier': 0,
     'react/jsx-uses-react': 0,
     'react/react-in-jsx-scope': 0,
+    curly: 0,
   },
 };
