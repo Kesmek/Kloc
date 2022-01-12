@@ -10,3 +10,5 @@ const Main = () => {
     </Navigator>
   );
 };
+
+export default Main;
