@@ -4,4 +4,9 @@ type OverviewData = {
   lastDay: number;
 };
 
-export type { OverviewData };
+type Coordinate = {
+  x: number;
+  y: number;
+};
+
+export type { OverviewData, Coordinate };
