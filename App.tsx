@@ -1,13 +1,13 @@
 import { NavigationContainer, Theme } from '@react-navigation/native';
 import { StatusBar, StyleSheet, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { persistStore } from 'redux-persist';
 import { store } from 'src/redux/store';
 import Main from 'src/screens/Main';
 import { colors } from 'src/utils/constants';
+import { SafeAreaProviderCompat } from '@react-navigation/elements';
 
 const persistor = persistStore(store);
 
@@ -27,8 +27,8 @@ const App = () => {
   };
 
   return (
-    <GestureHandlerRootView style={styles.root}>
-      <SafeAreaProvider>
+    <SafeAreaProviderCompat>
+      <GestureHandlerRootView style={styles.root}>
         <Provider store={store}>
           <PersistGate persistor={persistor} loading={null}>
             <NavigationContainer theme={theme}>
@@ -39,8 +39,8 @@ const App = () => {
             </NavigationContainer>
           </PersistGate>
         </Provider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+      </GestureHandlerRootView>
+    </SafeAreaProviderCompat>
   );
 };
 
