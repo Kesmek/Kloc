@@ -19,6 +19,7 @@ module.exports = {
     'prettier/prettier': 0,
     'react/jsx-uses-react': 0,
     'react/react-in-jsx-scope': 0,
+    'react-native/no-single-element-style-arrays': 1,
     curly: 0,
   },
 };
