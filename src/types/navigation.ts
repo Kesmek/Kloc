@@ -3,6 +3,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 type RootStackParamList = {
   Overview: undefined;
   Punches: { name: string };
+  'Create Employer': undefined;
+  Test: undefined;
 };
 
 type OverviewNavigationProps = NativeStackScreenProps<
@@ -10,4 +12,13 @@ type OverviewNavigationProps = NativeStackScreenProps<
   'Overview'
 >;
 
-export type { RootStackParamList, OverviewNavigationProps };
+type CreateEmployerNavigationProps = NativeStackScreenProps<
+  RootStackParamList,
+  'Create Employer'
+>;
+
+export type {
+  RootStackParamList,
+  OverviewNavigationProps,
+  CreateEmployerNavigationProps,
+};
