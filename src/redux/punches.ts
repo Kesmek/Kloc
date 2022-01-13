@@ -50,15 +50,29 @@ export const punchSlice = createSlice({
         if (state[employer].lastDay < timeIn) state[employer].lastDay = timeIn;
       }
     },
+    addEmployer: (state, action: PayloadAction<{ employer: string }>) => {
+      const { employer } = action.payload;
+      state[employer] = {
+        firstDay: new Date().getTime(),
+        lastDay: new Date().getTime(),
+      };
+    },
+    removeEmployer: (state, action: PayloadAction<{ employer: string }>) => {
+      const { employer } = action.payload;
+      delete state[employer];
+    },
   },
 });
 
-export const {} = punchSlice.actions;
+export const { addEmployer, addTime, removeEmployer } = punchSlice.actions;
 
 const selectPunches = (state: RootState) => state.punches;
 
-export const createSelectPunches = () =>
-  createSelector(selectPunches, state => state);
+export const createSelectPunches = createSelector(
+  selectPunches,
+  state => state,
+);
+
 export const createSelectYearPunches = ({
   employer,
   year,
