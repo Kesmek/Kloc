@@ -23,7 +23,6 @@ DerivedData
 
 # Android/IntelliJ
 #
-build/
 .idea
 .gradle
 local.properties
@@ -56,5 +55,16 @@ buck-out/
 # Bundle artifact
 *.jsbundle
 
-# CocoaPods
+# Ruby / CocoaPods
 /ios/Pods/
+/vendor/bundle/
+
+# Yarn
+.pnp.*
+.yarn/*
+.yarn/cache/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
