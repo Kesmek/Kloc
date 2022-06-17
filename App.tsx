@@ -1,13 +1,18 @@
-import { StyleSheet } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import App from 'src/screens/App';
+import { StyleSheet } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import App from "src/screens/app";
+import { SystemBars } from "react-native-bars";
+import { RealmProvider } from "src/backend/utils";
 
 const Root = () => {
   return (
     <SafeAreaProvider>
+      <SystemBars barStyle="dark-content" animated={true}/>
       <GestureHandlerRootView style={styles.flex}>
-        <App/>
+        <RealmProvider>
+          <App/>
+        </RealmProvider>
       </GestureHandlerRootView>
     </SafeAreaProvider>
   );
