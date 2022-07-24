@@ -259,6 +259,13 @@ android {
 
         }
     }
+
+    packagingOptions {
+        pickFirst 'lib/x86/librrc_root.so'
+        pickFirst 'lib/x86_64/librrc_root.so'
+        pickFirst 'lib/armeabi-v7a/librrc_root.so'
+        pickFirst 'lib/arm64-v8a/librrc_root.so'
+    }
 }
 
 dependencies {

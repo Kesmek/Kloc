@@ -2,7 +2,7 @@ module.exports = {
   root: true,
   extends: "@react-native-community",
   parser: "@typescript-eslint/parser",
-  plugins: ["@typescript-eslint"],
+  plugins: ["jest", "@typescript-eslint"],
   rules: {
     "react/jsx-uses-react": 0,
     "react/react-in-jsx-scope": 0,
