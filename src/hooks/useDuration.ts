@@ -1,21 +1,21 @@
 import { useEffect, useState } from "react";
 import { intervalToDuration } from "date-fns";
 
-export const useDuration = (start?: Date | number, end?: Date | number) => {
-  const [formattedEnd, setFormattedEnd] = useState(Date.now());
+export const useDuration = (
+  start?: Date,
+  end?: Date,
+) => {
+  const [seconds, setSeconds] = useState(0);
 
   useEffect(
     () => {
-      if (start) {
-        const interval = setInterval(
-          () => setFormattedEnd(Date.now()),
-          1000,
-        );
-        if (end) {
-          clearInterval(interval);
-        }
-        return () => clearInterval(interval);
+      const interval = setInterval(() => {
+        setSeconds((prev) => prev + 1);
+      }, 1000);
+      if (end) {
+        clearInterval(interval);
       }
+      return () => clearInterval(interval);
     },
     [end, start],
   );
@@ -25,6 +25,8 @@ export const useDuration = (start?: Date | number, end?: Date | number) => {
   } else if (end) {
     return intervalToDuration({ start, end });
   } else {
-    return intervalToDuration({ start, end: formattedEnd });
+    return intervalToDuration({
+      start, end: Date.now(),
+    });
   }
 };
