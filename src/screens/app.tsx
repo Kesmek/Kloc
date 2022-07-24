@@ -1,14 +1,14 @@
-import { NavigationContainer } from "@react-navigation/native";
 import type { Theme } from "@react-navigation/native";
+import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import EmployerPicker from "src/screens/employerPicker";
+import EmployerPicker from "./employerPicker";
 import { StyleSheet, Text, View } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { Colors } from "src/utils/constants";
-import EditEmployer from "src/screens/editEmployer";
-import BackButton from "src/components/BackButton";
-import Shifts from "src/screens/shifts";
-import EditShift from "src/screens/EditShift";
+import { Colors } from "../utils/constants";
+import BackButton from "../components/BackButton";
+import EditEmployer from "./editEmployer";
+import Shifts from "./shifts";
+import EditShift from "./EditShift";
 
 const { Navigator, Screen } = createNativeStackNavigator();
 
@@ -37,7 +37,12 @@ const App = () => {
 
   return (
     <NavigationContainer theme={theme}>
-      <Navigator screenOptions={{ headerLargeTitle: true, headerLeft: BackButton, animation: "fade" }}>
+      <Navigator
+        screenOptions={{
+          headerLargeTitle: true, headerLeft: BackButton, animation: "fade",
+          navigationBarColor: "transparent",
+        }}
+      >
         <Screen
           name={"Employer Picker"}
           component={EmployerPicker}
@@ -70,7 +75,9 @@ const App = () => {
 
 const styles = StyleSheet.create({
   titleWrapper: { flexDirection: "row", alignItems: "center" },
-  headerTitleStyle: { fontSize: 20, fontWeight: "bold", color: Colors.TEXT_DARK },
+  headerTitleStyle: {
+    fontSize: 20, fontWeight: "bold", color: Colors.TEXT_DARK,
+  },
   headerTitleIconStyle: { marginLeft: 5, color: Colors.TEXT_DARK },
 });
 

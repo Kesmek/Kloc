@@ -9,12 +9,11 @@ class Shift extends Realm.Object {
   edited!: boolean;
   notes?: string;
 
-  static generate(notes?: string, end?: Date, test?: boolean) {
+  static generate(
+    notes?: string,
+    end?: Date,
+  ) {
     const now = new Date();
-    if (test) {
-      now.setMonth(Math.floor(Math.random() * 12));
-      now.setDate(Math.floor(Math.random() * 30));
-    }
     return {
       _id: new Realm.BSON.ObjectId(),
       start: now,

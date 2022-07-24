@@ -1,22 +1,39 @@
-import { EditShiftNavigationProps } from "src/types/navigation";
-import { useObject, useRealm } from "src/backend/utils";
-import Shift from "src/backend/models/Shift";
-import { Alert, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
-import { Colors } from "src/utils/constants";
+import { EditShiftNavigationProps } from "../types/navigation";
+import { useObject, useRealm } from "../backend/utils";
+import Shift from "../backend/models/Shift";
+import {
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { Colors } from "../utils/constants";
 import { format } from "date-fns";
 import { useCallback, useEffect, useState } from "react";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { BaseButton, BorderlessButton, RectButton, TextInput } from "react-native-gesture-handler";
-import { formatDurationString } from "src/utils/time";
-import { useDuration } from "src/hooks/useDuration";
-import IconButton from "src/components/IconButton";
+import {
+  BaseButton,
+  BorderlessButton,
+  RectButton,
+  TextInput,
+} from "react-native-gesture-handler";
+import { formatDurationString } from "../utils/time";
+import { useDuration } from "../hooks/useDuration";
+import IconButton from "../components/IconButton";
+import {
+  DateTimePickerAndroid,
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 
 type Props = EditShiftNavigationProps;
 
 const EditShift = ({ navigation, route }: Props) => {
   const realm = useRealm();
-  const shift = useObject(
-    Shift,
+  const shift = useObject<Shift>(
+    "Shift",
     new Realm.BSON.ObjectId(route.params.id),
   )!;
 
@@ -29,33 +46,30 @@ const EditShift = ({ navigation, route }: Props) => {
     end,
   ) as Duration;
 
-  useEffect(() => {
-    navigation.setOptions({
-      headerTitle: format(
-        shift.start,
-        `MMM do, EEE.${shift.edited ? "*" : ""}`,
-      ),
-      headerRight: saveButton,
-    });
-  });
+  const saveAndExit = useCallback(
+    () => {
+      realm.write(() => {
+        shift.edited
+          = shift.edited || shift.end?.getTime() !== end?.getTime() || shift.start.getTime() !== start.getTime();
+        shift.end = end;
+        shift.start = start;
+        shift.notes = notes;
+      });
+      navigation.goBack();
+    },
+    [end, navigation, notes, realm, shift, start],
+  );
 
-  const saveButton = () => {
-    return (
-      <BorderlessButton onPress={saveAndExit} style={{ padding: 2 }}>
-        <Icon name="save" size={25} color={Colors.TEXT_DARK}/>
-      </BorderlessButton>
-    );
-  };
-
-  const saveAndExit = () => {
-    realm.write(() => {
-      shift.end = end;
-      shift.start = start;
-      shift.notes = notes;
-      shift.edited = shift.edited || shift.end?.getTime() !== end?.getTime() || shift.start.getTime() !== start.getTime();
-    });
-    navigation.goBack();
-  };
+  const saveButton = useCallback(
+    () => {
+      return (
+        <BorderlessButton onPress={saveAndExit} style={{ padding: 2 }}>
+          <Icon name="save" size={25} color={Colors.TEXT_DARK} />
+        </BorderlessButton>
+      );
+    },
+    [saveAndExit],
+  );
 
   const handleEndShift = () => {
     realm.write(() => {
@@ -71,10 +85,15 @@ const EditShift = ({ navigation, route }: Props) => {
         {
           text: "delete",
           onPress: () => {
-            navigation.goBack();
+            navigation.removeListener(
+              "beforeRemove",
+              () => {
+              },
+            );
             realm.write(() => {
               realm.delete(shift);
             });
+            navigation.goBack();
           },
         },
         {
@@ -88,16 +107,66 @@ const EditShift = ({ navigation, route }: Props) => {
     );
   };
 
+  const isTimeEdited = useCallback(
+    () => {
+      return shift.start.getTime() !== start?.getTime() || shift.end?.getTime() !== end?.getTime();
+    },
+    [end, shift.end, shift.start, start],
+  );
+
   const isEdited = useCallback(
     () => {
-      if (shift.end) {
-        return shift.start.getTime() !== start?.getTime() || shift.end.getTime() !== end?.getTime() || shift.notes !== notes;
-      } else {
-        return shift.start.getTime() !== start?.getTime() || shift.notes !== notes;
-      }
+      return isTimeEdited() || shift.notes !== notes;
     },
-    [end, notes, shift, start],
+    [isTimeEdited, notes, shift.notes],
   );
+
+  const editStart = () => {
+    DateTimePickerAndroid.open({
+      mode: "time", value: shift.start, onChange: updateStart, maximumDate: end,
+    });
+  };
+
+  const editEnd = () => {
+    if (!shift.end) {
+      return;
+    }
+    DateTimePickerAndroid.open({
+      mode: "time", value: shift.end, onChange: updateEnd,
+    });
+  };
+
+  const updateStart = (
+    event: DateTimePickerEvent,
+    date?: Date,
+  ) => {
+    if (!date) {
+      return;
+    }
+
+    if ((end && date > end) || date > new Date()) {
+      return Alert.alert("Error", "Cannot set a start time that is after the" +
+        " end time or the current time.");
+    }
+
+    setStart(date);
+  };
+
+  const updateEnd = (
+    event: DateTimePickerEvent,
+    date?: Date,
+  ) => {
+    if (!date) {
+      return;
+    }
+
+    if (date < start) {
+      return Alert.alert("Error", "Cannot set an end time that is before the" +
+        " start time.");
+    }
+
+    setEnd(date);
+  };
 
   useEffect(
     () =>
@@ -132,52 +201,64 @@ const EditShift = ({ navigation, route }: Props) => {
     [isEdited, navigation],
   );
 
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitle: format(
+        shift.start,
+        `MMM do, EEE.${isTimeEdited() ? "*" : ""}`,
+      ),
+      headerRight: saveButton,
+    });
+  }, [isTimeEdited, navigation, saveButton, shift.start]);
+
   if (!shift) {
     return null;
   }
   return (
-    <BaseButton onPress={Keyboard.dismiss} style={styles.root} rippleColor={"transparent"}>
+    <BaseButton
+      onPress={Keyboard.dismiss} style={styles.root} rippleColor={"transparent"}
+    >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
         <View style={styles.header}>
-          <Icon name="add-alarm" size={30} color={Colors.GREEN}/>
+          <Icon name="add-alarm" size={30} color={Colors.GREEN} />
           <Text style={styles.headerText}>{"Start"}</Text>
         </View>
         <View style={styles.timeContainer}>
-          <RectButton style={styles.button}>
+          <RectButton style={styles.button} onPress={editStart}>
             <Text
               style={styles.time}
             >{format(
-              shift.start,
+              start,
               "EEEE, MMMM do",
             )}</Text>
             <Text
               style={styles.time}
             >{format(
-              shift.start,
+              start,
               "h:mm a",
             )}</Text>
           </RectButton>
         </View>
         <View style={styles.header}>
-          <Icon name="alarm-on" size={30} color={Colors.RED}/>
+          <Icon name="alarm-on" size={30} color={Colors.RED} />
           <Text style={styles.headerText}>{"End"}</Text>
         </View>
-        {shift.end ? (
+        {end ? (
           <View style={styles.timeContainer}>
-            <RectButton style={styles.button}>
+            <RectButton style={styles.button} onPress={editEnd}>
               <Text
                 style={styles.time}
               >{format(
-                shift.end,
+                end,
                 "EEEE, MMMM do",
               )}</Text>
               <Text
                 style={styles.time}
               >{format(
-                shift.end,
+                end,
                 "h:mm a",
               )}</Text>
             </RectButton>
@@ -196,7 +277,7 @@ const EditShift = ({ navigation, route }: Props) => {
           </IconButton>
         )}
         <View style={styles.header}>
-          <Icon name="schedule" size={30} color={Colors.SECONDARY}/>
+          <Icon name="schedule" size={30} color={Colors.SECONDARY} />
           <Text style={styles.headerText}>{"Duration"}</Text>
         </View>
         <View style={styles.timeContainer}>
@@ -210,7 +291,7 @@ const EditShift = ({ navigation, route }: Props) => {
           </RectButton>
         </View>
         <View style={styles.header}>
-          <Icon name="edit" size={30} color={Colors.PRIMARY_LIGHT}/>
+          <Icon name="edit" size={30} color={Colors.PRIMARY_LIGHT} />
           <Text style={styles.headerText}>{"Notes"}</Text>
         </View>
         <TextInput
@@ -220,6 +301,7 @@ const EditShift = ({ navigation, route }: Props) => {
           onChangeText={setNotes}
           value={notes}
           maxLength={250}
+          disallowInterruption={true}
         />
         <IconButton
           name="delete"

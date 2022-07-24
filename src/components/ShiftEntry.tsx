@@ -1,7 +1,14 @@
-import { StyleProp, StyleSheet, Text, TextStyle, View, ViewStyle } from "react-native";
+import {
+  StyleProp,
+  StyleSheet,
+  Text,
+  TextStyle,
+  View,
+  ViewStyle,
+} from "react-native";
 import { format } from "date-fns";
-import IconButton from "src/components/IconButton";
-import { Colors } from "src/utils/constants";
+import IconButton from "../components/IconButton";
+import { Colors } from "../utils/constants";
 import { RectButton } from "react-native-gesture-handler";
 import { memo } from "react";
 
@@ -39,7 +46,8 @@ const ShiftEntry = (
     return string.substring(
       0,
       50,
-    ).concat(append);
+    )
+    .concat(append);
   };
 
   return (
@@ -54,7 +62,8 @@ const ShiftEntry = (
           start,
           `LLL do, EEE.${edited ? "*" : ""}`,
         )}</Text>
-        <Text style={[styles.notes, textStyle]} numberOfLines={2}>{formatString(notes)}</Text>
+        <Text style={[styles.notes, textStyle]} numberOfLines={2}>{formatString(
+          notes)}</Text>
       </View>
       <View style={[styles.dateWrapper, { flexDirection: "row", flex: 1.25 }]}>
         <IconButton

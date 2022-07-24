@@ -1,8 +1,8 @@
 import { StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import App from "src/screens/app";
-import { RealmProvider } from "src/backend/utils";
+import App from "./src/screens/app";
+import { RealmProvider } from "./src/backend/utils";
 
 const Root = () => {
   return (

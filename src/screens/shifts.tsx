@@ -1,20 +1,35 @@
-import { Alert, ListRenderItem, SectionList, SectionListData, StyleSheet, Text, View } from "react-native";
-import { ShiftsNavigationProps } from "src/types/navigation";
-import { Colors } from "src/utils/constants";
-import IconButton from "src/components/IconButton";
+import {
+  Alert,
+  ListRenderItem,
+  SectionList,
+  SectionListData,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { ShiftsNavigationProps } from "../types/navigation";
+import { Colors } from "../utils/constants";
+import IconButton from "../components/IconButton";
 import { useCallback, useEffect } from "react";
-import ShiftEntry from "src/components/ShiftEntry";
-import { useObject, useQuery, useRealm } from "src/backend/utils";
-import Shift from "src/backend/models/Shift";
-import { formatDurationString, formatIntervalString, getMonthName } from "src/utils/time";
-import ObjectId = Realm.BSON.ObjectId;
-import { useSafeAreaFrame, useSafeAreaInsets } from "react-native-safe-area-context";
-import { useDuration } from "src/hooks/useDuration";
+import ShiftEntry from "../components/ShiftEntry";
+import { useObject, useQuery, useRealm } from "../backend/utils";
+import Shift from "../backend/models/Shift";
+import {
+  formatDurationString,
+  formatIntervalString,
+  getMonthName,
+} from "../utils/time";
+import {
+  useSafeAreaFrame,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import { useDuration } from "../hooks/useDuration";
 import Animated, {
   useAnimatedStyle,
   useDerivedValue,
   withTiming,
 } from "react-native-reanimated";
+import { Realm } from "@realm/react";
 
 type Props = ShiftsNavigationProps
 
@@ -23,16 +38,16 @@ const Shifts = ({ navigation, route }: Props) => {
   const frame = useSafeAreaFrame();
 
   const realm = useRealm();
-  const allShifts = useQuery("Shift")
+  const allShifts = useQuery<Shift>("Shift")
   .sorted(
     "start",
     true,
   );
   const shifts = allShifts.filtered(`year == ${route.params.year}`);
   const activeShifts = allShifts.filtered("end == null")?.[0];
-  const activeShift = useObject(
-    Shift,
-    activeShifts?.toJSON()._id ?? new Realm.BSON.ObjectId(),
+  const activeShift = useObject<Shift>(
+    "Shift",
+    activeShifts?._id ?? new Realm.BSON.ObjectId(),
   );
   const duration = useDuration(
     activeShift?.start,
@@ -64,7 +79,8 @@ const Shifts = ({ navigation, route }: Props) => {
     () => {
       const sections = [];
       for (let i = 11; i >= 0; i--) {
-        const monthShifts = shifts.filtered(`month == ${i}`).toJSON();
+        const monthShifts = shifts.filtered(`month == ${i}`)
+        .toJSON();
         sections.push({
           data: monthShifts,
           key: getMonthName(i),
@@ -105,9 +121,9 @@ const Shifts = ({ navigation, route }: Props) => {
     }
   };
 
-  const renderSectionSeparator = () => <View style={styles.sectionSeparator}/>;
+  const renderSectionSeparator = () => <View style={styles.sectionSeparator} />;
 
-  const renderItemSeparator = () => <View style={styles.itemSeparator}/>;
+  const renderItemSeparator = () => <View style={styles.itemSeparator} />;
 
   const renderItem: ListRenderItem<Shift> =
     ({ item }) => {
@@ -127,7 +143,9 @@ const Shifts = ({ navigation, route }: Props) => {
         return (
           <ShiftEntry
             {...item}
-            duration={formatIntervalString({ start: item.start, end: item.end ?? 0 })}
+            duration={formatIntervalString({
+              start: item.start, end: item.end ?? Number.MAX_SAFE_INTEGER,
+            })}
             onPress={() => navigation.navigate(
               "Edit Shift",
               { id: item._id.toHexString() },
@@ -153,14 +171,7 @@ const Shifts = ({ navigation, route }: Props) => {
       );
     } else {
       realm.write(() => {
-        realm.create(
-          "Shift",
-          Shift.generate(
-            "",
-            // activeShift ? new Date(Date.now() + Math.random() * 10000000) : undefined,
-            // true,
-          ),
-        );
+        const newShift = new Shift(realm, Shift.generate());
       });
     }
   };
@@ -179,12 +190,18 @@ const Shifts = ({ navigation, route }: Props) => {
       <SectionList
         sections={getSections()}
         style={styles.sectionList}
-        contentContainerStyle={[styles.contentContainer, { paddingBottom: insets.bottom + 76.5 }]}
+        contentContainerStyle={[
+          styles.contentContainer,
+          { paddingBottom: insets.bottom + 76.5 },
+        ]}
         renderSectionHeader={renderSectionHeader}
         SectionSeparatorComponent={renderSectionSeparator}
         ItemSeparatorComponent={renderItemSeparator}
         renderItem={renderItem}
-        getItemLayout={(item, index) => {
+        getItemLayout={(
+          item,
+          index,
+        ) => {
           return {
             index,
             length: 70,
@@ -218,6 +235,7 @@ const Shifts = ({ navigation, route }: Props) => {
             style={styles.addButton}
             onPress={addShift}
             color={Colors.TEXT_DARK}
+            enabled={true}
           />
         )}
       </Animated.View>

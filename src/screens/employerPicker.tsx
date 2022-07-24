@@ -1,20 +1,20 @@
-import { FlatList, ListRenderItem, StyleSheet, Text, View } from 'react-native';
-import { EmployerPickerNavigationProps } from 'src/types/navigation';
-import { BorderlessButton, RectButton } from 'react-native-gesture-handler';
-import { Colors } from 'src/utils/constants';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import { useQuery } from 'src/backend/utils';
-import Employer from 'src/backend/models/Employer';
-import { Realm } from '@realm/react';
+import { FlatList, ListRenderItem, StyleSheet, Text, View } from "react-native";
+import { EmployerPickerNavigationProps } from "../types/navigation";
+import { BorderlessButton, RectButton } from "react-native-gesture-handler";
+import { Colors } from "../utils/constants";
+import Icon from "react-native-vector-icons/MaterialIcons";
+import { useQuery } from "../backend/utils";
+import Employer from "../backend/models/Employer";
+import { Realm } from "@realm/react";
 
 type Props = EmployerPickerNavigationProps;
 
 const EmployerPicker = ({ navigation }: Props) => {
-  const employers = useQuery('Employer');
+  const employers = useQuery<Employer>("Employer");
 
   const handleEditEmployer = (id?: Realm.BSON.ObjectId) => {
     navigation.navigate(
-      'Edit Employer',
+      "Edit Employer",
       { id: id?.toHexString() },
     );
   };
@@ -27,7 +27,7 @@ const EmployerPicker = ({ navigation }: Props) => {
         <RectButton
           style={styles.button}
           onPress={() => navigation.navigate(
-            'Shifts',
+            "Shifts",
             { name: item.name, year: new Date().getFullYear() },
           )}
         >
@@ -44,12 +44,9 @@ const EmployerPicker = ({ navigation }: Props) => {
               style={styles.editButton}
             >
               <BorderlessButton
-                onPress={() => navigation.navigate(
-                  'Edit Employer',
-                  { id: item._id.toHexString() },
-                )}
+                onPress={() => handleEditEmployer(item._id)}
               >
-                <Icon name="more-vert" size={30}/>
+                <Icon name="more-vert" size={30} />
               </BorderlessButton>
             </View>
           </View>
@@ -58,7 +55,7 @@ const EmployerPicker = ({ navigation }: Props) => {
     );
   };
 
-  const renderEmpty = () => {
+  const renderFooter = () => {
     return (
       <View
         style={styles.buttonWrapper}
@@ -67,21 +64,21 @@ const EmployerPicker = ({ navigation }: Props) => {
           style={styles.addButton}
           onPress={() => handleEditEmployer()}
         >
-          <Icon name="work" size={40}/>
-          <Icon name="add" size={30} style={styles.iconOverlay}/>
+          <Icon name="work" size={40} />
+          <Icon name="add" size={30} style={styles.iconOverlay} />
         </RectButton>
       </View>
     );
   };
 
-  const renderSeparator = () => <View style={styles.separator}/>;
+  const renderSeparator = () => <View style={styles.separator} />;
 
   return (
     <FlatList
-      data={employers.toJSON()}
+      data={employers}
       renderItem={renderItem}
       contentContainerStyle={styles.flatListContent}
-      ListFooterComponent={renderEmpty}
+      ListFooterComponent={renderFooter}
       ListFooterComponentStyle={{ marginTop: 10 }}
       style={styles.flatList}
       ItemSeparatorComponent={renderSeparator}
@@ -97,10 +94,10 @@ const styles = StyleSheet.create({
     height: 100,
     flex: 1,
     borderRadius: 15,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   card: {
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: 10,
   },
   itemWrapper: {
@@ -108,24 +105,24 @@ const styles = StyleSheet.create({
   },
   editButton: {
     flex: 1,
-    height: '100%',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
+    height: "100%",
+    alignItems: "flex-end",
+    justifyContent: "center",
     paddingRight: 10,
   },
   addButton: {
     flex: 1,
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
   },
   button: {
     flex: 1,
-    width: '100%',
+    width: "100%",
   },
   name: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   description: {
     marginLeft: 5,
@@ -135,7 +132,7 @@ const styles = StyleSheet.create({
   flatListContent: { flexGrow: 1, padding: 10 },
   flatList: { flex: 1 },
   iconOverlay: {
-    position: 'absolute',
+    position: "absolute",
     color: Colors.BORDER,
     paddingTop: 5,
   },

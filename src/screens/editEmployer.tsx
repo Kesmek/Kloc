@@ -1,23 +1,21 @@
 import { Alert, Keyboard, StyleSheet, Text, View } from "react-native";
-import { EditEmployerNavigationProps } from "src/types/navigation";
+import { EditEmployerNavigationProps } from "../types/navigation";
 import { BaseButton, TextInput } from "react-native-gesture-handler";
-import { RefObject, useEffect, useRef, useState } from "react";
-import { Colors } from "src/utils/constants";
-import IconButton from "src/components/IconButton";
-import { useObject, useRealm } from "src/backend/utils";
-import Employer from "src/backend/models/Employer";
+import { RefObject, useCallback, useEffect, useRef, useState } from "react";
+import { Colors } from "../utils/constants";
+import IconButton from "../components/IconButton";
+import { useObject, useRealm } from "../backend/utils";
+import Employer from "../backend/models/Employer";
 import { Realm } from "@realm/react";
 
 type Props = EditEmployerNavigationProps;
 
 const EditEmployer = ({ navigation, route }: Props) => {
   const realm = useRealm();
-  const employer = useObject(
-    Employer,
-    route.params.id
-      ? new Realm.BSON.ObjectId(route.params.id)
-      : new Realm.BSON.ObjectId(),
-  );
+  const employer = useObject<Employer>(
+    "Employer",
+    new Realm.BSON.ObjectId(route.params.id),
+  )!;
 
   const nameInputRef = useRef<TextInput>(null);
   const descriptionInputRef = useRef<TextInput>(null);
@@ -30,29 +28,16 @@ const EditEmployer = ({ navigation, route }: Props) => {
   };
 
   const confirmEmployer = () => {
-    if (name) {
-      if (employer?.name) {
-        realm.write(() => {
-          employer.name = name;
-        });
-      } else {
-        realm.write(() => {
-          realm.create(
-            "Employer",
-            Employer.generate(
-              name,
-              description,
-            ),
-          );
-        });
-      }
-      navigation.removeListener(
-        "beforeRemove",
-        () => {
-        },
-      );
-      navigation.goBack();
-    }
+    realm.write(() => {
+      employer.name = name;
+      employer.description = description ?? employer.description;
+    });
+    navigation.removeListener(
+      "beforeRemove",
+      () => {
+      },
+    );
+    navigation.goBack();
   };
 
   const confirmDelete = () => {
@@ -86,12 +71,19 @@ const EditEmployer = ({ navigation, route }: Props) => {
     }
   };
 
+  const isEdited = useCallback(
+    () => {
+      return (!!name && name !== employer?.name) || employer?.description !== description;
+    },
+    [description, employer?.description, employer?.name, name],
+  );
+
   useEffect(
     () =>
       navigation.addListener(
         "beforeRemove",
         (e) => {
-          if (!!name && name !== employer?.name) {
+          if (isEdited()) {
             e.preventDefault();
           } else {
             return;
@@ -116,12 +108,16 @@ const EditEmployer = ({ navigation, route }: Props) => {
           );
         },
       ),
-    [employer?.name, name, navigation],
+    [employer?.name, isEdited, name, navigation],
   );
 
   return (
-    <BaseButton style={styles.root} onPress={Keyboard.dismiss} rippleColor={"transparent"}>
-      <Text style={styles.label} onPress={() => focusRef(nameInputRef)}>Name</Text>
+    <BaseButton
+      style={styles.root} onPress={Keyboard.dismiss} rippleColor={"transparent"}
+    >
+      <Text
+        style={styles.label} onPress={() => focusRef(nameInputRef)}
+      >Name</Text>
       <TextInput
         ref={nameInputRef}
         style={styles.input}
@@ -131,8 +127,11 @@ const EditEmployer = ({ navigation, route }: Props) => {
         value={name}
         autoCapitalize={"words"}
         onSubmitEditing={() => focusRef(descriptionInputRef)}
+        disallowInterruption={true}
       />
-      <Text style={styles.label} onPress={() => focusRef(nameInputRef)}>Description</Text>
+      <Text
+        style={styles.label} onPress={() => focusRef(nameInputRef)}
+      >Description</Text>
       <TextInput
         ref={descriptionInputRef}
         style={[
@@ -146,6 +145,7 @@ const EditEmployer = ({ navigation, route }: Props) => {
         autoCapitalize={"sentences"}
         value={description}
         onSubmitEditing={confirmEmployer}
+        disallowInterruption={true}
       />
       <View style={styles.buttonRow}>
         <IconButton
@@ -153,11 +153,11 @@ const EditEmployer = ({ navigation, route }: Props) => {
           size={40}
           style={[
             styles.buttonWrapper, {
-              opacity: !!name && name !== employer?.name ? 1 : 0.25,
+              opacity: isEdited() ? 1 : 0.25,
             },
           ]}
           color={Colors.GREEN}
-          enabled={!!name && name !== employer?.name}
+          enabled={isEdited()}
           onPress={confirmEmployer}
         />
         <IconButton
@@ -169,7 +169,6 @@ const EditEmployer = ({ navigation, route }: Props) => {
               opacity: employer?.name ? 1 : 0.25,
             },
           ]}
-          enabled={!!employer?.name}
           color={Colors.RED}
           onPress={confirmDelete}
         />

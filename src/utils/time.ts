@@ -40,7 +40,10 @@ export const padNumber = (time?: number) => {
   }
 };
 
-export const formatDurationString = (duration?: Duration, format?: string) => {
+export const formatDurationString = (
+  duration?: Duration,
+  format?: string,
+) => {
   let durationString = "";
   let hourSeparator = ":";
   let minuteSeparator = ":";
@@ -68,7 +71,13 @@ export const formatDurationString = (duration?: Duration, format?: string) => {
   return durationString.concat(`${minutes}${minuteSeparator}${padNumber(duration.seconds)}${secondSeparator}`);
 };
 
-export const formatIntervalString = (interval: Interval, format?: string) => {
+export const formatIntervalString = (
+  interval: Interval,
+  format?: string,
+) => {
+  if (interval.start > interval.end) {
+    console.log(interval);
+  }
   return formatDurationString(
     intervalToDuration(interval),
     format,

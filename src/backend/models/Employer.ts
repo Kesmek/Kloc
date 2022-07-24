@@ -1,11 +1,14 @@
-import { Realm } from '@realm/react';
+import { Realm } from "@realm/react";
 
-class Employer extends Realm.Object {
+class Employer extends Realm.Object<Employer> {
   _id!: Realm.BSON.ObjectId;
   name!: string;
   description?: string;
 
-  static generate(name: string, description?: string) {
+  static generate(
+    name: string,
+    description?: string,
+  ) {
     return {
       _id: new Realm.BSON.ObjectId(),
       name,
@@ -15,12 +18,12 @@ class Employer extends Realm.Object {
   }
 
   static schema = {
-    name: 'Employer',
-    primaryKey: '_id',
+    name: "Employer",
+    primaryKey: "_id",
     properties: {
-      '_id': 'objectId',
-      'name': 'string',
-      'description': 'string?',
+      "_id": "objectId",
+      "name": "string",
+      "description": "string?",
     },
   };
 }
