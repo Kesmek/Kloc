@@ -1,0 +1,1 @@
+{"version":3,"names":["UnistylesMockedBridge","UnistylesMockedRegistry","UnistylesMockedRuntime"],"sourceRoot":"../../../../src","sources":["core/mocks/index.ts"],"mappings":"AAAA,SAASA,qBAAqB,QAAQ,yBAAyB;AAC/D,SAASC,uBAAuB,QAAQ,2BAA2B;AACnE,SAASC,sBAAsB,QAAQ,0BAA0B","ignoreList":[]}

@@ -1,0 +1,1 @@
+ALTER TABLE `job` ADD `min_shift_duration_mins` integer DEFAULT 180 NOT NULL;

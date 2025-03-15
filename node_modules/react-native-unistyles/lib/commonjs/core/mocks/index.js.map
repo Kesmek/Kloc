@@ -1,0 +1,1 @@
+{"version":3,"names":["_UnistylesMockedBridge","require","_UnistylesMockedRegistry","_UnistylesMockedRuntime"],"sourceRoot":"../../../../src","sources":["core/mocks/index.ts"],"mappings":";;;;;;;;;;;;;;;;;;;;;;;AAAA,IAAAA,sBAAA,GAAAC,OAAA;AACA,IAAAC,wBAAA,GAAAD,OAAA;AACA,IAAAE,uBAAA,GAAAF,OAAA","ignoreList":[]}
