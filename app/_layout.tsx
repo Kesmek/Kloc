@@ -1,60 +1,56 @@
 import { Slot, SplashScreen } from "expo-router";
-import { Text } from "react-native";
 import "@/constants/unistyles";
-import { useEffect } from "react";
-import {
-  UnistylesRuntime,
-  createStyleSheet,
-  useStyles,
-} from "react-native-unistyles";
-import { ThemeProvider } from "@react-navigation/native";
+import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { ThemeProvider, DefaultTheme } from "@react-navigation/native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "temporal-polyfill/global";
-import { useMigrationsHelper } from "@/db/drizzle";
-import { DatabaseProvider } from "@/db/provider";
+import { DATABASE_NAME, DataProvider, tursoOptions } from "@/db/DataContext";
+import { migrate } from "drizzle-orm/expo-sqlite/migrator";
+import migrations from "@/db/migrations/migrations";
+import { SQLiteProvider } from "expo-sqlite";
 
 SplashScreen.preventAutoHideAsync();
 
+const runMigrations = async (db: any) => {
+  console.log("Running migrations...");
+  await migrate(db, migrations);
+  console.log("Migrations complete.");
+  await SplashScreen.hideAsync();
+};
+
 function App() {
-  const { success, error } = useMigrationsHelper();
-  const { styles } = useStyles(stylesheet);
-
-  if (error) {
-    SplashScreen.hideAsync();
-
-    return <Text style={styles.text}>Migration error: {error.message}</Text>;
-  } else if (!success) {
-    return <Text style={styles.text}>Migration is in progress...</Text>;
-  }
-
-  return <RootLayout />;
-}
-
-function RootLayout() {
-  const { styles, theme } = useStyles(stylesheet);
-
-  useEffect(() => {
-    UnistylesRuntime.setRootViewBackgroundColor(theme.colors.background);
-    UnistylesRuntime.statusBar.setColor(theme.colors.slate2);
-    UnistylesRuntime.navigationBar.setColor(theme.colors.slate2);
-    SplashScreen.hideAsync();
-  }, []);
+  const { theme } = useUnistyles();
 
   return (
-    <DatabaseProvider>
-      <GestureHandlerRootView style={styles.container}>
-        <ThemeProvider value={theme.navigation}>
-          <Slot />
-        </ThemeProvider>
-      </GestureHandlerRootView>
-    </DatabaseProvider>
+    <SQLiteProvider
+      databaseName={DATABASE_NAME}
+      options={{
+        libSQLOptions: {
+          url: tursoOptions.url,
+          authToken: tursoOptions.authToken,
+        },
+        enableChangeListener: true,
+      }}
+      onInit={runMigrations}
+    >
+      <DataProvider>
+        <GestureHandlerRootView style={styles.container}>
+          <ThemeProvider
+            value={{
+              dark: theme.navigation.dark,
+              colors: theme.navigation.colors,
+              fonts: DefaultTheme.fonts,
+            }}
+          >
+            <Slot />
+          </ThemeProvider>
+        </GestureHandlerRootView>
+      </DataProvider>
+    </SQLiteProvider>
   );
 }
 
-const stylesheet = createStyleSheet((_, rt) => ({
-  text: {
-    marginTop: rt.insets.top,
-  },
+const styles = StyleSheet.create((_, rt) => ({
   container: {
     flex: 1,
     paddingBottom: rt.insets.bottom,

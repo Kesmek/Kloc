@@ -1,8 +1,11 @@
-module.exports = function (api) {
+module.exports = (api) => {
   api.cache(true);
 
   return {
     presets: ["babel-preset-expo"],
-    plugins: [["inline-import", { extensions: [".sql"] }]], // <-- add this
+    plugins: [
+      ["inline-import", { extensions: [".sql"] }], // <-- add this
+      ["react-native-unistyles/plugin"],
+    ],
   };
 };

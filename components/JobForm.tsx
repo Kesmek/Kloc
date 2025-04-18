@@ -1,5 +1,5 @@
 import TextInput from "@/components/TextInput";
-import { TextInput as RNTextInput } from "react-native-gesture-handler";
+import type { TextInput as RNTextInput } from "react-native-gesture-handler";
 import usePreventBack from "@/hooks/usePreventBack";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import { ScrollView } from "react-native-gesture-handler";
@@ -25,10 +25,10 @@ export interface FormFields {
   overtimeHours: number;
   overtimeMins: number;
   overtimeCycle: OTCycle;
-  startDate: Temporal.ZonedDateTime;
+  startDate: Temporal.PlainDate;
   paycyclePeriod: Paycycle;
   description: string;
-  minShiftDurationMins: number;
+  minShiftDurationMinutes: number;
 }
 
 interface JobFormProps {
@@ -50,9 +50,9 @@ const JobForm = ({
     overtimeMins: 0,
     overtimeCycle: OTCycle.Week,
     paycyclePeriod: Paycycle.Biweekly,
-    startDate: Temporal.Now.zonedDateTimeISO(),
+    startDate: Temporal.Now.plainDateISO(),
     description: "",
-    minShiftDurationMins: 180,
+    minShiftDurationMinutes: 180,
   },
   disabledFields = [],
   onSubmit,
@@ -87,7 +87,7 @@ const JobForm = ({
   );
   const [description, setDescription] = useState(initialValues.description);
   const [minShiftLengthMins, setMinShiftLengthMins] = useState(
-    initialValues.minShiftDurationMins.toString(),
+    initialValues.minShiftDurationMinutes.toString(),
   );
 
   const validName = useMemo(() => /\w*/.test(name), [name]);
@@ -137,7 +137,7 @@ const JobForm = ({
         overtimeHours: toNumber(overtimeHours),
         paycyclePeriod,
         breakDuration: toNumber(breakDuration),
-        minShiftDurationMins: toNumber(minShiftLengthMins),
+        minShiftDurationMinutes: toNumber(minShiftLengthMins),
       });
     }
   };
@@ -145,7 +145,7 @@ const JobForm = ({
   useEffect(() => {
     setPreventBack(
       name !== initialValues.name ||
-        !date.toPlainDate().equals(initialValues.startDate.toPlainDate()) ||
+        !date.equals(initialValues.startDate) ||
         overtimeHours !== initialValues.overtimeHours.toString() ||
         overtimeMins !== initialValues.overtimeMins.toString() ||
         description !== initialValues.description ||
@@ -272,20 +272,20 @@ const JobForm = ({
             onPress={() => setDateModalOpen(true)}
           >
             <Icon name="calendar" />
-            <Text style={styles.dateText}>
-              {date.toPlainDate().toLocaleString()}
-            </Text>
+            <Text style={styles.dateText}>{date.toLocaleString()}</Text>
           </NativePlatformPressable>
           <DatePicker
             open={dateModalOpen}
             title={"Paycycle Start Date"}
-            minimumDate={date.subtract({ months: 1 })}
-            maximumDate={date.add({ months: 1 })}
+            minimumDate={Temporal.PlainDateTime.from(date).subtract({
+              months: 1,
+            })}
+            maximumDate={Temporal.PlainDateTime.from(date).add({ months: 1 })}
             mode="date"
-            date={date}
+            date={Temporal.PlainDateTime.from(date)}
             onConfirm={(date) => {
               setDateModalOpen(false);
-              setDate(date);
+              setDate(date.toPlainDate());
             }}
             onCancel={() => {
               setDateModalOpen(false);

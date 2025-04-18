@@ -1,12 +1,12 @@
-import { SelectShift } from "@/db/schema";
+import type { SelectShift } from "@/db/schema";
 
 export type Stringified<T> = {
   [K in keyof T]: string;
 };
 
 export enum OTCycle {
-  Day,
-  Week,
+  Day = 1,
+  Week = 7,
 }
 
 export enum Paycycle {
@@ -19,7 +19,7 @@ type AssertValuesExist<T, K extends keyof T> = {
 };
 
 export interface CompleteShift
-  extends AssertValuesExist<SelectShift, "endTime" | "duration"> {}
+  extends AssertValuesExist<SelectShift, "endTime"> {}
 
 export interface ShiftCardProps {
   shift: SelectShift;

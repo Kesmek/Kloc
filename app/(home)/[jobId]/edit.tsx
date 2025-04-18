@@ -1,25 +1,25 @@
-import { SelectJobs, job } from "@/db/schema";
-import { useDatabase } from "@/hooks/useDatabase";
-import { Stack, router, useLocalSearchParams } from "expo-router";
-import { toNumber } from "@/utils/helpers";
-import { eq } from "drizzle-orm";
+import Icon from "@/components/Icon";
 import type { FormFields } from "@/components/JobForm";
 import JobForm from "@/components/JobForm";
-import { OTCycle, Paycycle, Stringified } from "@/utils/typescript";
-import { Alert } from "react-native";
 import NativePlatformPressable from "@/components/NativePlatformPressable";
-import Icon from "@/components/Icon";
+import { type SelectJobs, job } from "@/db/schema";
+import { useDatabase } from "@/hooks/useDatabase";
+import { toNumber } from "@/utils/helpers";
+import { OTCycle, Paycycle, type Stringified } from "@/utils/typescript";
+import { eq } from "drizzle-orm";
+import { Stack, router, useLocalSearchParams } from "expo-router";
+import { Alert } from "react-native";
 
 const EditJob = () => {
   const {
     jobId,
     name: jobName,
     description: jobDescription,
-    overtimeBoundaryMins,
-    overtimePeriod,
+    overtimeThresholdMinutes,
+    overtimePeriodDays,
     breakDurationMins,
     paycycleDays,
-    minShiftDurationMins,
+    minShiftDurationMinutes,
   } = useLocalSearchParams<
     Stringified<SelectJobs> & {
       jobId: string;
@@ -27,7 +27,7 @@ const EditJob = () => {
   >();
   const { db } = useDatabase();
   const overtimeCycle =
-    toNumber(overtimePeriod) === OTCycle.Week ? OTCycle.Week : OTCycle.Day;
+    toNumber(overtimePeriodDays) === OTCycle.Week ? OTCycle.Week : OTCycle.Day;
   const paycyclePeriod =
     toNumber(paycycleDays) === Paycycle.Weekly
       ? Paycycle.Weekly
@@ -40,19 +40,19 @@ const EditJob = () => {
     overtimeMins,
     overtimeHours,
     breakDuration,
-    minShiftDurationMins,
+    minShiftDurationMinutes,
   }: FormFields) => {
     try {
-      const overtimeBoundaryMins = overtimeHours * 60 + overtimeMins;
+      const overtimeThresholdMinutes = overtimeHours * 60 + overtimeMins;
       await db
         .update(job)
         .set({
           name,
           description,
-          overtimeBoundaryMins,
-          overtimePeriod: overtimeCycle,
+          overtimeThresholdMinutes,
+          overtimePeriodDays: overtimeCycle,
           breakDurationMins: breakDuration,
-          minShiftDurationMins,
+          minShiftDurationMinutes,
         })
         .where(eq(job.id, toNumber(jobId)));
       router.navigate("/");
@@ -108,10 +108,10 @@ const EditJob = () => {
         initialValues={{
           name: jobName ?? "",
           description: jobDescription ?? "",
-          startDate: Temporal.Now.zonedDateTimeISO(),
-          minShiftDurationMins: toNumber(minShiftDurationMins),
-          overtimeMins: toNumber(overtimeBoundaryMins) % 60,
-          overtimeHours: Math.floor(toNumber(overtimeBoundaryMins) / 60),
+          startDate: Temporal.Now.plainDateISO(),
+          minShiftDurationMinutes: toNumber(minShiftDurationMinutes),
+          overtimeMins: toNumber(overtimeThresholdMinutes) % 60,
+          overtimeHours: Math.floor(toNumber(overtimeThresholdMinutes) / 60),
           overtimeCycle,
           breakDuration: toNumber(breakDurationMins),
           paycyclePeriod,

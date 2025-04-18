@@ -8,10 +8,10 @@ interface DatePickerProps
     RNDatePickerProps,
     "date" | "maximumDate" | "minimumDate" | "onConfirm"
   > {
-  date: Temporal.ZonedDateTime;
-  maximumDate?: Temporal.ZonedDateTime;
-  minimumDate?: Temporal.ZonedDateTime;
-  onConfirm?: (date: Temporal.ZonedDateTime) => void;
+  date: Temporal.PlainDateTime;
+  maximumDate?: Temporal.PlainDateTime;
+  minimumDate?: Temporal.PlainDateTime;
+  onConfirm?: (date: Temporal.PlainDateTime) => void;
 }
 
 const CustomDatePicker = ({
@@ -27,9 +27,10 @@ const CustomDatePicker = ({
 
   const confirmDate = (date: Date) => {
     if (onConfirm) {
-      const temporalDate = date
-        .toTemporalInstant()
-        .toZonedDateTimeISO(Temporal.Now.timeZoneId());
+      // const temporalDate = date
+      //   .toTemporalInstant()
+      //   .toZonedDateTimeISO(Temporal.Now.timeZoneId());
+      const temporalDate = Temporal.PlainDateTime.from(date.toString());
       onConfirm(temporalDate);
     }
   };
@@ -37,12 +38,12 @@ const CustomDatePicker = ({
   return (
     <DatePicker
       modal={modal}
-      date={new Date(inputDate.epochMilliseconds)}
+      date={new Date(inputDate.millisecond)}
       maximumDate={
-        maximumDate ? new Date(maximumDate.epochMilliseconds) : undefined
+        maximumDate ? new Date(maximumDate.millisecond) : undefined
       }
       minimumDate={
-        minimumDate ? new Date(minimumDate.epochMilliseconds) : undefined
+        minimumDate ? new Date(minimumDate.millisecond) : undefined
       }
       buttonColor={buttonColor ?? theme.colors.text}
       onConfirm={confirmDate}

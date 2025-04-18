@@ -4,7 +4,7 @@ import { View, Text } from "react-native";
 import { createStyleSheet, useStyles } from "react-native-unistyles";
 import Icon from "./Icon";
 import { useMemo } from "react";
-import { ShiftCardProps } from "@/utils/typescript";
+import type { ShiftCardProps } from "@/utils/typescript";
 import { clampDuration } from "@/utils/helpers";
 
 const ShiftCard = ({
@@ -41,11 +41,11 @@ const ShiftCard = ({
   const duration = useMemo(
     () =>
       durationFormat(
-        Temporal.Duration.from(shift.duration ?? { seconds: 0 }).subtract({
+        Temporal.Duration.from(shift.endTime ?? { seconds: 0 }).subtract({
           minutes: breakDurationMins,
         }),
       ),
-    [breakDurationMins, durationFormat, shift.duration],
+    [breakDurationMins, durationFormat, shift.endTime],
   );
 
   return (
@@ -56,8 +56,7 @@ const ShiftCard = ({
           startTime: shift.startTime,
           endTime: shift.endTime,
           notes: shift.notes,
-          duration: shift.duration,
-          edited: `${shift.edited}`,
+          edited: `${shift.isEdited}`,
           minShiftDurationMins,
           breakDurationMins,
         },
@@ -80,7 +79,7 @@ const ShiftCard = ({
                 month: "long",
               })}
             </Text>
-            {shift.edited && (
+            {shift.isEdited && (
               <Text style={[styles.secondaryText, styles.edited]}>edited</Text>
             )}
           </View>

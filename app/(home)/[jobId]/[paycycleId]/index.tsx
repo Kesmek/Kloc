@@ -4,7 +4,12 @@ import NativePlatformPressable from "@/components/NativePlatformPressable";
 import Separator from "@/components/Separator";
 import Shift from "@/components/ShiftCard";
 import { db } from "@/db/drizzle";
-import { SelectJobs, SelectPaycycle, paycycle, shift } from "@/db/schema";
+import {
+  type SelectJobs,
+  type SelectPaycycle,
+  paycycle,
+  shift,
+} from "@/db/schema";
 import { toNumber } from "@/utils/helpers";
 import {
   filterCompleteShift,
@@ -16,7 +21,7 @@ import {
   isBeforePaycycle,
   isOutsidePaycycle,
 } from "@/utils/shiftFunctions";
-import { Stringified } from "@/utils/typescript";
+import type { Stringified } from "@/utils/typescript";
 import { eq } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { Link, Stack, router, useLocalSearchParams } from "expo-router";
@@ -34,11 +39,11 @@ const Paycycle = () => {
     startDate,
     paycycleDays,
     breakDurationMins: breakDuration,
-    overtimePeriod: otPeriod,
-    overtimeBoundaryMins: otBoundary,
+    overtimePeriodDays: otPeriod,
+    overtimeThresholdMinutes: otBoundary,
     name,
     description,
-    minShiftDurationMins: minShiftDuration,
+    minShiftDurationMinutes: minShiftDuration,
   } = useLocalSearchParams<
     Stringified<SelectJobs> & {
       jobId: string;
@@ -49,12 +54,9 @@ const Paycycle = () => {
 
   const jobId = toNumber(jid);
   const paycycleId = toNumber(pcid);
-  const paycycleStartDate = Temporal.ZonedDateTime.from(startDate!);
+  const paycycleStartDate = Temporal.PlainDate.from(startDate);
   const paycycleDurationDays = toNumber(paycycleDays);
-  const today = Temporal.Now.zonedDateTimeISO()
-    .startOfDay()
-    .add({ days: 1 })
-    .subtract({ seconds: 1 });
+  const today = Temporal.Now.plainDateTimeISO();
   const breakDurationMins = toNumber(breakDuration);
   const overtimePeriod = toNumber(otPeriod);
   const overtimeBoundaryMins = toNumber(otBoundary);
@@ -145,24 +147,20 @@ const Paycycle = () => {
   };
 
   const handlePressImmediate = async () => {
-    const now = Temporal.Now.zonedDateTimeISO();
+    const now = Temporal.Now.plainDateTimeISO();
     await handlePressScheduled(now, false);
   };
 
   const handlePressScheduled = async (
-    dateTime: Temporal.ZonedDateTime,
-    edited: boolean = true,
+    dateTime: Temporal.PlainDateTime,
+    isEdited = true,
   ) => {
     if (ongoingShift) {
-      const total = dateTime.since(
-        Temporal.ZonedDateTime.from(ongoingShift.startTime),
-      );
       await db
         ?.update(shift)
         .set({
           endTime: dateTime.toString(),
-          duration: total.toString(),
-          edited,
+          isEdited,
         })
         .where(eq(shift.id, ongoingShift.id));
       setOngoingShift(undefined);
@@ -225,9 +223,10 @@ const Paycycle = () => {
 
       await db?.insert(shift).values({
         startTime: dateTime.toString(),
+        endTime: dateTime.add({ days: paycycleDurationDays }),
         jobId,
         paycycleId: newCycle.id,
-        edited,
+        isEdited,
       });
       if (newCycle.id !== paycycleId) {
         router.replace({
@@ -296,7 +295,7 @@ const Paycycle = () => {
       {renderHeader()}
       <View style={styles.flatlistContainer}>
         <FlatList
-          data={shiftsQuery.filter((shift) => !!shift.duration)}
+          data={shiftsQuery.filter((shift) => !!shift.endTime)}
           renderItem={({ item }) => (
             <Shift
               shift={item}
@@ -314,10 +313,10 @@ const Paycycle = () => {
       <DatePicker
         open={dateModalOpen}
         title={"Select Date"}
-        minimumDate={paycycleStartDate}
+        minimumDate={Temporal.PlainDateTime.from(paycycleStartDate)}
         maximumDate={today}
         mode="datetime"
-        date={Temporal.Now.zonedDateTimeISO()}
+        date={Temporal.Now.plainDateTimeISO()}
         onConfirm={(date) => {
           handlePressScheduled(date);
           setDateModalOpen(false);

@@ -45,9 +45,17 @@ export const getPrevStartDate = (
   return currentPayrollPeriod.subtract({ days: paycycleDays });
 };
 
-const getRawTotalShiftDuration = (shifts: CompleteShift[]) =>
+const getRawTotalShiftDuration = (shifts: SelectShift[]) =>
   shifts.reduce(
-    (acc, shift) => acc.add(Temporal.Duration.from(shift.duration)),
+    (acc, shift) =>
+      acc.add(
+        // If no endTime i.e. ongoing do not inclute shift in duration calculation
+        shift.endTime
+          ? Temporal.ZonedDateTime.from(shift.startTime).since(
+              Temporal.ZonedDateTime.from(shift.startTime),
+            )
+          : Temporal.Duration.from({ seconds: 0 }),
+      ),
     Temporal.Duration.from({ seconds: 0 }),
   );
 
@@ -76,7 +84,7 @@ export const getPaycycleStats = (
   overtimeCycle: number,
   overtimeBoundaryMins: number,
   breakDurationMins: number,
-  paycycleStartDate: Temporal.ZonedDateTime,
+  paycycleStartDate: Temporal.PlainDate,
 ) => {
   const totalDuration = getRawTotalShiftDuration(shifts);
   const totalDurationAdjusted = getTotalShiftDuration(
@@ -217,4 +225,4 @@ export const filterOngoingShift = (shift: SelectShift) =>
 
 export const filterCompleteShift = (
   shift: SelectShift,
-): shift is CompleteShift => shift.endTime !== null && shift.duration !== null;
+): shift is CompleteShift => shift.endTime !== null;

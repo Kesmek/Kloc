@@ -1,4 +1,4 @@
-import { UnistylesRegistry } from "react-native-unistyles";
+import { StyleSheet, UnistylesRegistry } from "react-native-unistyles";
 import {
   slate,
   slateDark,
@@ -12,7 +12,7 @@ import {
   amberDark,
 } from "@radix-ui/colors";
 
-const remToPx = (num: number, basePx: number = 16) => {
+const remToPx = (num: number, basePx = 16) => {
   return num * basePx;
 };
 
@@ -173,11 +173,12 @@ declare module "react-native-unistyles" {
   export interface UnistylesThemes extends AppThemes {}
 }
 
-UnistylesRegistry.addThemes({
-  light: lightTheme,
-  dark: darkTheme,
-  // register other themes with unique names
-}).addConfig({
-  // you can pass here optional config described below
-  adaptiveThemes: true,
+StyleSheet.configure({
+  themes: {
+    light: lightTheme,
+    dark: darkTheme,
+  },
+  settings: {
+    adaptiveThemes: true,
+  },
 });
