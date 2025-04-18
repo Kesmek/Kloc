@@ -8,6 +8,7 @@ import { DATABASE_NAME, DataProvider, tursoOptions } from "@/db/DataContext";
 import { migrate } from "drizzle-orm/expo-sqlite/migrator";
 import migrations from "@/db/migrations/migrations";
 import { SQLiteProvider } from "expo-sqlite";
+import { SystemBars } from "react-native-edge-to-edge";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -42,6 +43,7 @@ function App() {
               fonts: DefaultTheme.fonts,
             }}
           >
+            <SystemBars style={"auto"} />
             <Slot />
           </ThemeProvider>
         </GestureHandlerRootView>
