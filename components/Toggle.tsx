@@ -5,7 +5,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { createStyleSheet, useStyles } from "react-native-unistyles";
+import { StyleSheet } from "react-native-unistyles";
 
 interface ToggleProps<T extends string | number> {
   firstValue: T;
@@ -32,7 +32,6 @@ const Toggle = <T extends string | number>({
   disabled,
   value = firstValue,
 }: ToggleProps<T>) => {
-  const { styles, theme } = useStyles(stylesheet);
   const transition = useSharedValue(value === firstValue ? 0 : buttonWidth);
 
   const animatedAccentStyle = useAnimatedStyle(() => ({
@@ -41,12 +40,12 @@ const Toggle = <T extends string | number>({
 
   const onTogglePressRight = () => {
     transition.value = withTiming(buttonWidth);
-    onPressRight && onPressRight(secondValue);
+    onPressRight?.(secondValue);
   };
 
   const onTogglePressLeft = () => {
     transition.value = withTiming(0);
-    onPressLeft && onPressLeft(firstValue);
+    onPressLeft?.(firstValue);
   };
 
   return (
@@ -55,21 +54,21 @@ const Toggle = <T extends string | number>({
         style={[
           {
             width: buttonWidth,
-            backgroundColor: accentColor ?? theme.colors.accent,
+            backgroundColor: accentColor,
           },
           styles.accent,
           animatedAccentStyle,
         ]}
       />
       <BaseButton
-        rippleColor={theme.colors.transparent}
+        rippleColor={"transparent"}
         enabled={!disabled}
         onPress={onTogglePressLeft}
       >
         <Text style={[{ width: buttonWidth }, styles.text]}>{firstLabel}</Text>
       </BaseButton>
       <BaseButton
-        rippleColor={theme.colors.transparent}
+        rippleColor={"transparent"}
         enabled={!disabled}
         onPress={onTogglePressRight}
       >
@@ -79,7 +78,7 @@ const Toggle = <T extends string | number>({
   );
 };
 
-const stylesheet = createStyleSheet((theme) => ({
+const styles = StyleSheet.create((theme) => ({
   container: {
     flexDirection: "row",
     borderWidth: theme.borderWidths.thin,
@@ -104,6 +103,7 @@ const stylesheet = createStyleSheet((theme) => ({
     bottom: 0,
     position: "absolute",
     borderRadius: theme.radii.lg,
+    backgroundColor: theme.colors.accent,
   },
   disabled: {
     opacity: 0.5,

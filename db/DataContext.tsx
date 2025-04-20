@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/expo-sqlite";
-import { eq } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { useSQLiteContext } from "expo-sqlite";
 import {
   type PropsWithChildren,
@@ -17,6 +17,7 @@ import {
   type NewPaycycle,
   type NewShift,
   type Paycycle,
+  PaycycleStatistics,
   type Shift,
   job,
   paycycle,
@@ -64,10 +65,20 @@ interface DataContextType {
     updatedJobData: Partial<Omit<Job, "id">>,
   ) => Promise<Job | undefined>;
   deleteJob: (id: number) => Promise<void>;
+  fetchJobs: () => Promise<Job[]>;
+  fetchShifts: (paycycleId: number) => Promise<Shift[]>;
+  fetchPaycycles: (jobId: number) => Promise<Paycycle[]>;
+  fetchPaycycleStatsById: (
+    jobId: number,
+    paycycleId: number,
+  ) => Promise<Paycycle | undefined>;
   isMigrating: boolean;
   migrationError: Error | undefined;
   isSyncing: boolean;
   toggleSync: (enabled: boolean) => void;
+  findLastShiftContext: () => Promise<
+    { jobId: number; paycycleId: number } | undefined
+  >;
 }
 
 export const DataContext = createContext<DataContextType | null>(null);
@@ -97,31 +108,98 @@ PRAGMA foreign_keys = ON;
   const [migrationError, setMigrationError] = useState<Error | undefined>();
   const syncIntervalRef = useRef<number>(null);
 
+  const { success, error } = useMigrations(drizzleDb, migrations);
+
   // --- Fetch initial data using Drizzle ---
   const fetchJobs = useCallback(async () => {
+    let result: Job[] = [];
     try {
       // Use Drizzle's select syntax
-      const result = await drizzleDb.query.job.findMany();
+      result = await drizzleDb.query.job.findMany();
       setJobs(result);
+      return result;
     } catch (e) {
       console.error("Failed to fetch jobs:", e);
     }
+    return result;
   }, [drizzleDb]);
+
+  const fetchPaycycles = useCallback(
+    async (jobId: number) => {
+      let result: Paycycle[] = [];
+      try {
+        // Use Drizzle's select syntax
+        result = await drizzleDb.query.paycycle.findMany({
+          where: eq(paycycle.jobId, jobId),
+        });
+      } catch (e) {
+        console.error("Failed to fetch jobs:", e);
+      }
+      return result;
+    },
+    [drizzleDb],
+  );
+
+  const fetchPaycycleStatsById = useCallback(
+    async (jobId: number, paycycleId: number) => {
+      let result: PaycycleStatistics | undefined;
+      try {
+        // Use Drizzle's select syntax
+        result = await drizzleDb
+          .select({
+            jobId: job.id,
+            name: job.name,
+            overtimeThresholdMinutes: job.overtimeThresholdMinutes,
+            description: job.description,
+            breakDurationMinutes: job.breakDurationMinutes,
+            minShiftDurationMinutes: job.minShiftDurationMinutes,
+            overtimePeriodDays: job.overtimePeriodDays,
+            paycycleId: paycycle.id,
+            startDate: paycycle.startDate,
+            endDate: paycycle.endDate,
+          })
+          .from(paycycle)
+          .innerJoin(job, eq(paycycle.jobId, job.id))
+          .where(and(eq(paycycle.id, paycycleId), eq(job.id, jobId)))
+          .limit(1);
+
+        return result[0];
+      } catch (e) {
+        console.error("Failed to fetch paycycle:", e);
+      }
+    },
+    [drizzleDb],
+  );
+
+  const fetchShifts = useCallback(
+    async (paycycleId: number) => {
+      let result: Shift[] = [];
+      try {
+        // Use Drizzle's select syntax
+        result = await drizzleDb.query.shift.findMany({
+          where: eq(shift.paycycleId, paycycleId),
+        });
+      } catch (e) {
+        console.error("Failed to fetch jobs:", e);
+      }
+      return result;
+    },
+    [drizzleDb],
+  );
 
   // Initial fetch effect
   useEffect(() => {
-    const { success, error } = useMigrations(drizzleDb, migrations);
     setIsMigrating(true);
-
     if (error) {
       setMigrationError(error);
     }
 
     if (success) {
       setIsMigrating(false);
+      console.log("Migrations complete.");
       fetchJobs();
     }
-  }, [fetchJobs, drizzleDb]);
+  }, [fetchJobs, success, error]);
 
   // Cleanup effect for interval
   useEffect(() => {
@@ -278,6 +356,20 @@ PRAGMA foreign_keys = ON;
     }
   };
 
+  const findLastShiftContext = async () => {
+    const lastShiftInfo = await drizzleDb
+      .select({
+        jobId: paycycle.jobId,
+        paycycleId: shift.paycycleId,
+      })
+      .from(shift)
+      .innerJoin(paycycle, eq(shift.paycycleId, paycycle.id))
+      .orderBy(desc(shift.startTime))
+      .limit(1);
+
+    return lastShiftInfo[0]; // Returns { jobId, paycycleId } or undefined
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -294,6 +386,11 @@ PRAGMA foreign_keys = ON;
         deleteShift,
         deleteJob,
         deletePaycycle,
+        findLastShiftContext,
+        fetchJobs,
+        fetchPaycycles,
+        fetchPaycycleStatsById,
+        fetchShifts,
       }}
     >
       {children}

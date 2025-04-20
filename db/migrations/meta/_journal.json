@@ -22,6 +22,13 @@
       "when": 1720878940609,
       "tag": "0002_naive_newton_destine",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1744991145490,
+      "tag": "0003_lean_steel_serpent",
+      "breakpoints": true
     }
   ]
 }

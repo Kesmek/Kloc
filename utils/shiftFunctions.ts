@@ -1,75 +1,71 @@
-import { SelectShift } from "@/db/schema";
+import type { Shift } from "@/db/schema";
 import { clamp, clampDuration } from "./helpers";
-import { CompleteShift, OTCycle } from "./typescript";
+import { type CompleteShift, OTCycle } from "./typescript";
 
 export const isOutsidePaycycle = (
-  paycycleStart: Temporal.ZonedDateTime,
-  paycycleDurationDays: number,
-  startTime: Temporal.ZonedDateTime,
+  paycycleStart: Temporal.PlainDate,
+  paycycleEnd: Temporal.PlainDate,
+  startTime: Temporal.PlainDate,
 ) => {
-  const punchInDate = Temporal.ZonedDateTime.from(startTime);
-  const endDate = paycycleStart.add({ days: paycycleDurationDays });
-
-  return isBeforePaycycle(paycycleStart, punchInDate)
+  return isBeforePaycycle(paycycleStart, startTime)
     ? -1
-    : isAfterPaycycle(endDate, punchInDate)
+    : isAfterPaycycle(paycycleEnd, startTime)
       ? 1
       : 0;
 };
 
 export const isBeforePaycycle = (
-  paycycleStart: Temporal.ZonedDateTime,
-  punchInTime: Temporal.ZonedDateTime,
+  paycycleStart: Temporal.PlainDate,
+  punchInTime: Temporal.PlainDate,
 ) => {
-  return Temporal.ZonedDateTime.compare(punchInTime, paycycleStart) < 0;
+  return Temporal.PlainDate.compare(punchInTime, paycycleStart) < 0;
 };
 
 export const isAfterPaycycle = (
-  paycycleEnd: Temporal.ZonedDateTime,
-  punchInTime: Temporal.ZonedDateTime,
+  paycycleEnd: Temporal.PlainDate,
+  punchInTime: Temporal.PlainDate,
 ) => {
-  return Temporal.ZonedDateTime.compare(punchInTime, paycycleEnd) >= 0;
+  return Temporal.PlainDate.compare(punchInTime, paycycleEnd) >= 0;
 };
 
 export const getNextStartDate = (
-  currentPayrollPeriod: Temporal.ZonedDateTime,
+  currentPayrollPeriod: Temporal.PlainDate,
   paycycleDays: number,
 ) => {
   return currentPayrollPeriod.add({ days: paycycleDays });
 };
 
 export const getPrevStartDate = (
-  currentPayrollPeriod: Temporal.ZonedDateTime,
+  currentPayrollPeriod: Temporal.PlainDate,
   paycycleDays: number,
 ) => {
   return currentPayrollPeriod.subtract({ days: paycycleDays });
 };
 
-const getRawTotalShiftDuration = (shifts: SelectShift[]) =>
+const getRawTotalShiftDuration = (shifts: Shift[]) =>
   shifts.reduce(
     (acc, shift) =>
       acc.add(
         // If no endTime i.e. ongoing do not inclute shift in duration calculation
         shift.endTime
-          ? Temporal.ZonedDateTime.from(shift.startTime).since(
-              Temporal.ZonedDateTime.from(shift.startTime),
-            )
+          ? Temporal.Instant.from(shift.startTime).since(shift.startTime)
           : Temporal.Duration.from({ seconds: 0 }),
       ),
     Temporal.Duration.from({ seconds: 0 }),
   );
 
-const getTotalShiftDuration = (
-  shifts: CompleteShift[],
-  breakDurationMins: number,
-) =>
+const getTotalShiftDuration = (shifts: Shift[], breakDurationMins: number) =>
   shifts.reduce(
     (acc, shift) =>
       acc.add(
         clampDuration(
-          Temporal.Duration.from(shift.duration).subtract({
-            minutes: breakDurationMins,
-          }),
+          shift.endTime
+            ? Temporal.Instant.from(shift.endTime)
+                .since(shift.startTime)
+                .subtract({
+                  minutes: breakDurationMins,
+                })
+            : Temporal.Duration.from({ seconds: 0 }),
           Temporal.Duration.from({ hours: 3 }),
         ),
       ),
@@ -80,7 +76,7 @@ const durationToHours = (duration: Temporal.Duration) =>
   clamp(0, duration.total({ unit: "hours" })).toPrecision(3);
 
 export const getPaycycleStats = (
-  shifts: CompleteShift[],
+  shifts: Shift[],
   overtimeCycle: number,
   overtimeBoundaryMins: number,
   breakDurationMins: number,
@@ -127,17 +123,17 @@ export const getPaycycleStats = (
 };
 
 export const getWeeklyStats = (
-  shifts: CompleteShift[],
+  shifts: Shift[],
   breakDurationMins: number,
-  paycycleStartDate: Temporal.ZonedDateTime,
+  paycycleStartDate: Temporal.PlainDate,
 ) => {
   //get the shifts in the first of the 2 weeks
   const firstWeekEndDate = paycycleStartDate.add({ weeks: 1 });
   const weekOneShifts = shifts.filter(
     (shift) =>
       //check if the start time is earlier than one week after the paycycles' start
-      Temporal.ZonedDateTime.compare(
-        Temporal.ZonedDateTime.from(shift.startTime),
+      Temporal.PlainDate.compare(
+        Temporal.PlainDate.from(shift.startTime),
         firstWeekEndDate,
       ) < 0,
   );
@@ -160,10 +156,10 @@ export const getWeeklyStats = (
 };
 
 export const getOvertimeHoursWeekly = (
-  shifts: CompleteShift[],
+  shifts: Shift[],
   overtimeBoundaryMins: number,
   breakDurationMins: number,
-  paycycleStartDate: Temporal.ZonedDateTime,
+  paycycleStartDate: Temporal.PlainDate,
 ) => {
   const { weekTwoTotalDuration, weekOneTotalDuration } = getWeeklyStats(
     shifts,
@@ -188,7 +184,7 @@ export const getOvertimeHoursWeekly = (
 };
 
 export const getOvertimeHoursDaily = (
-  shifts: CompleteShift[],
+  shifts: Shift[],
   overtimeBoundaryMins: number,
   breakDuration: Temporal.Duration,
 ) => {
@@ -198,19 +194,21 @@ export const getOvertimeHoursDaily = (
   let totalOvertime = Temporal.Duration.from({
     seconds: 0,
   });
-  shifts.forEach((shift) => {
-    const shiftOvertime = Temporal.Duration.from(
-      shift.duration ?? { seconds: 0 },
-    )
-      .subtract(breakDuration)
-      .subtract(overtimeBoundary)
-      .round("seconds")
-      .total({ unit: "second" });
+
+  for (const shift of shifts) {
+    const shiftOvertime = shift.endTime
+      ? Temporal.Instant.from(shift.endTime)
+          .since(shift.startTime)
+          .subtract(breakDuration)
+          .subtract(overtimeBoundary)
+          .round("seconds")
+          .total({ unit: "second" })
+      : 0;
 
     totalOvertime = totalOvertime.add({
       seconds: clamp(0, shiftOvertime),
     });
-  });
+  }
 
   return totalOvertime;
 };
@@ -220,9 +218,7 @@ export const stringToTime = (str: string) => {
   return matches?.join(" ") ?? "";
 };
 
-export const filterOngoingShift = (shift: SelectShift) =>
-  !filterCompleteShift(shift);
+export const filterOngoingShift = (shift: Shift) => !filterCompleteShift(shift);
 
-export const filterCompleteShift = (
-  shift: SelectShift,
-): shift is CompleteShift => shift.endTime !== null;
+export const filterCompleteShift = (shift: Shift): shift is CompleteShift =>
+  shift.endTime !== null;

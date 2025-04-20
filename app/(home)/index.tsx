@@ -1,54 +1,48 @@
 import Icon from "@/components/Icon";
 import NativePlatformPressable from "@/components/NativePlatformPressable";
-import { job, paycycle } from "@/db/schema";
-import { useDatabase } from "@/hooks/useDatabase";
-import { sql } from "drizzle-orm";
-import { useLiveQuery } from "drizzle-orm/expo-sqlite";
-import { Link, Stack } from "expo-router";
+import { useData } from "@/db/DataContext";
+import type { Job } from "@/db/schema";
+import { Link, Stack, useRouter } from "expo-router";
 import { Text, View } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
-import { createStyleSheet, useStyles } from "react-native-unistyles";
+import { StyleSheet } from "react-native-unistyles";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 
 const Home = () => {
-  const { styles } = useStyles(stylesheet);
-  const { db } = useDatabase();
-  const { data: jobs } = useLiveQuery(
-    db
-      ?.select({
-        id: job.id,
-        name: job.name,
-        paycycleDays: job.paycycleDays,
-        overtimeBoundaryMins: job.overtimeBoundaryMins,
-        overtimePeriod: job.overtimePeriod,
-        description: job.description,
-        breakDurationMins: job.breakDurationMins,
-        startDate: paycycle.startDate,
-        paycycleId: paycycle.id,
-        minShiftDurationMins: job.minShiftDurationMins,
-      })
-      .from(paycycle)
-      .rightJoin(
-        job,
-        sql`${paycycle.id} = (
-        SELECT id FROM ${paycycle}
-        WHERE ${paycycle.jobId} = ${job.id}
-        ORDER BY ${paycycle.startDate} DESC
-        LIMIT 1
-      )`,
-      ),
-  );
+  const { findLastShiftContext, fetchJobs } = useData();
+  const router = useRouter();
+
+  const { data: jobs, isLoading: isLoadingJobs } = useQuery({
+    queryKey: ["jobs"],
+    queryFn: () => fetchJobs(), // Fetch function using Drizzle
+  });
+
+  useEffect(() => {
+    const determineInitialRoute = async () => {
+      const params = await findLastShiftContext();
+      console.log(params);
+
+      if (params) {
+        router.navigate({
+          pathname: "/[jobId]/[paycycleId]",
+          params: { jobId: params.jobId, paycycleId: params.paycycleId },
+        });
+      }
+    };
+
+    determineInitialRoute();
+  }, [router, findLastShiftContext]);
 
   //TODO: If date is later than latest paycycle, create new paycycle and navigate to that one. This allows me to avoid having to check if the paycycle exists when starting a new shift (or planned one) from inside a paycycle that isnt the latest one
-  const navigateToJob = (id: number, latestPaycycleId: number) => {};
-
-  const renderJobs = (jp: (typeof jobs)[0]) => {
-    const { id: jobId, paycycleId, ...rest } = jp;
+  const renderJobs = (job: Job) => {
     return (
       <Link
         href={{
-          pathname: `/${jobId}/${paycycleId}`,
+          pathname: "/[jobId]",
           params: {
-            ...rest,
+            jobId: job.id,
+            ...job,
           },
         }}
         asChild
@@ -58,7 +52,7 @@ const Home = () => {
           style={styles.listJob}
           // onPress={navigateToJob}
         >
-          <Text style={styles.jobName}>{jp.name}</Text>
+          <Text style={styles.jobName}>{job.name}</Text>
         </NativePlatformPressable>
       </Link>
     );
@@ -70,7 +64,7 @@ const Home = () => {
         options={{
           title: "Jobs",
           headerRight: (props) => (
-            <Link asChild href={"CreateJob"}>
+            <Link asChild href={"/CreateJob"}>
               <NativePlatformPressable unstyled borderless>
                 <Icon name="plus" color={props.tintColor} />
               </NativePlatformPressable>
@@ -83,12 +77,13 @@ const Home = () => {
         renderItem={({ item }) => renderJobs(item)}
         style={styles.flatlist}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListEmptyComponent={<Text>Loading...</Text>}
       />
     </>
   );
 };
 
-const stylesheet = createStyleSheet((theme) => ({
+const styles = StyleSheet.create((theme) => ({
   jobName: {
     color: theme.colors.text,
     fontSize: theme.sizes[5],

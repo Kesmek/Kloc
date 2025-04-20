@@ -1,12 +1,16 @@
-import { ForwardedRef, forwardRef } from "react";
-import { StyleProp, ViewStyle, StyleSheet } from "react-native";
+import { type ForwardedRef, forwardRef } from "react";
 import {
-  BaseButtonProps,
+  StyleSheet as RNStyleSheet,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
+import {
+  type BaseButtonProps,
   BorderlessButton,
   RectButton,
 } from "react-native-gesture-handler";
-import Animated, { AnimatedStyle } from "react-native-reanimated";
-import { createStyleSheet, useStyles } from "react-native-unistyles";
+import Animated, { type AnimatedStyle } from "react-native-reanimated";
+import { StyleSheet } from "react-native-unistyles";
 
 interface NativePlatformPressableProps extends Omit<BaseButtonProps, "style"> {
   label?: string;
@@ -43,7 +47,7 @@ const useExtractStyles = (style: AnimatedStyle<StyleProp<ViewStyle>>) => {
   const containerStyle: ViewStyle = {};
   const viewStyle: ViewStyle = {};
 
-  Object.entries(StyleSheet.flatten(style) || {}).forEach(([key, value]) => {
+  Object.entries(RNStyleSheet.flatten(style) || {}).forEach(([key, value]) => {
     if (containerAttributes.includes(key as ContainerAttribute)) {
       containerStyle[key as ContainerAttribute] = value;
       if (bothAttributes.includes(key as bothAttributes)) {
@@ -58,7 +62,7 @@ const useExtractStyles = (style: AnimatedStyle<StyleProp<ViewStyle>>) => {
 };
 
 const NativePlatformPressable = forwardRef<
-  BorderlessButton | RectButton,
+  typeof BorderlessButton | typeof RectButton,
   NativePlatformPressableProps
 >(
   (
@@ -77,12 +81,11 @@ const NativePlatformPressable = forwardRef<
     },
     ref,
   ) => {
-    const { styles } = useStyles(stylesheet);
     const { containerStyle, viewStyle } = useExtractStyles(style);
 
     return borderless ? (
       <BorderlessButton
-        ref={ref as ForwardedRef<BorderlessButton>}
+        ref={ref as ForwardedRef<typeof BorderlessButton>}
         enabled={!disabled}
         foreground={true}
         testID={testID}
@@ -101,7 +104,7 @@ const NativePlatformPressable = forwardRef<
       </BorderlessButton>
     ) : (
       <RectButton
-        ref={ref as ForwardedRef<RectButton>}
+        ref={ref as ForwardedRef<typeof RectButton>}
         enabled={!disabled}
         foreground={true}
         testID={testID}
@@ -126,7 +129,7 @@ const NativePlatformPressable = forwardRef<
   },
 );
 
-const stylesheet = createStyleSheet((theme) => ({
+const styles = StyleSheet.create((theme) => ({
   button: {
     paddingHorizontal: theme.spacing[4],
     paddingVertical: theme.spacing[2],

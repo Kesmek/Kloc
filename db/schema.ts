@@ -8,7 +8,7 @@ export const job = sqliteTable("job", {
     .notNull()
     .default(2400),
   overtimePeriodDays: integer("overtime_period_days").notNull().default(7),
-  breakDurationMins: integer("break_duration_minutes").notNull().default(30),
+  breakDurationMinutes: integer("break_duration_minutes").notNull().default(30),
   paycycleDays: integer("paycycle_days").notNull().default(14),
   minShiftDurationMinutes: integer("min_shift_duration_minutes")
     .notNull()
@@ -51,3 +51,8 @@ export type NewPaycycle = typeof paycycle.$inferInsert;
 
 export type Shift = typeof shift.$inferSelect;
 export type NewShift = typeof shift.$inferInsert;
+
+export type PaycycleStatistics = Omit<Job, "id"> &
+  Omit<Paycycle, "id"> & {
+    paycycleId: number;
+  };
