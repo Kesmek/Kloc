@@ -1,12 +1,16 @@
 import { useMemo } from "react";
 import { stringToTime } from "@/utils/shiftFunctions";
-import { ShiftCardProps } from "@/utils/typescript";
+import type { ShiftCardProps } from "@/utils/typescript";
 import useActiveDuration from "@/hooks/useActiveDuration";
 import ShiftCard from "./ShiftCard";
 
-const ActiveShift = ({ shift, minShiftDurationMins }: ShiftCardProps) => {
+const ActiveShift = ({
+  shift,
+  minShiftDurationMins,
+  jobId,
+}: ShiftCardProps) => {
   const startTime = useMemo(
-    () => Temporal.ZonedDateTime.from(shift.startTime),
+    () => Temporal.Instant.from(shift.startTime),
     [shift.startTime],
   );
 
@@ -14,10 +18,11 @@ const ActiveShift = ({ shift, minShiftDurationMins }: ShiftCardProps) => {
 
   return (
     <ShiftCard
-      shift={{ ...shift, duration: duration.toString() }}
+      shift={{ ...shift }}
       durationFormat={(duration) => stringToTime(duration.toString())}
       minShiftDurationMins={minShiftDurationMins}
       breakDurationMins={0}
+      jobId={jobId}
     />
   );
 };

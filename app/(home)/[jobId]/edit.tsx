@@ -2,15 +2,16 @@ import Icon from "@/components/Icon";
 import type { FormFields } from "@/components/JobForm";
 import JobForm from "@/components/JobForm";
 import NativePlatformPressable from "@/components/NativePlatformPressable";
-import { type SelectJobs, job } from "@/db/schema";
-import { useDatabase } from "@/hooks/useDatabase";
+import { useData } from "@/db/DataContext";
+import type { Job } from "@/db/schema";
 import { toNumber } from "@/utils/helpers";
 import { OTCycle, Paycycle, type Stringified } from "@/utils/typescript";
-import { eq } from "drizzle-orm";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { Alert } from "react-native";
 
 const EditJob = () => {
+  const { updateJob, deleteJob } = useData();
+
   const {
     jobId,
     name: jobName,
@@ -21,11 +22,10 @@ const EditJob = () => {
     paycycleDays,
     minShiftDurationMinutes,
   } = useLocalSearchParams<
-    Stringified<SelectJobs> & {
+    Stringified<Job> & {
       jobId: string;
     }
   >();
-  const { db } = useDatabase();
   const overtimeCycle =
     toNumber(overtimePeriodDays) === OTCycle.Week ? OTCycle.Week : OTCycle.Day;
   const paycyclePeriod =
@@ -44,24 +44,21 @@ const EditJob = () => {
   }: FormFields) => {
     try {
       const overtimeThresholdMinutes = overtimeHours * 60 + overtimeMins;
-      await db
-        .update(job)
-        .set({
-          name,
-          description,
-          overtimeThresholdMinutes,
-          overtimePeriodDays: overtimeCycle,
-          breakDurationMins: breakDuration,
-          minShiftDurationMinutes,
-        })
-        .where(eq(job.id, toNumber(jobId)));
+      await updateJob(toNumber(jobId), {
+        name,
+        description,
+        overtimeThresholdMinutes,
+        overtimePeriodDays: overtimeCycle,
+        breakDurationMins: breakDuration,
+        minShiftDurationMinutes,
+      });
       router.navigate("/");
     } catch (err: unknown) {
-      console.error("Insertion Error:", err);
+      console.error("Update Error:", err);
     }
   };
 
-  const deleteJob = (jobId: number) => {
+  const deleteCurrentJob = () => {
     Alert.alert(
       "Are you sure?",
       "This will delete this job and all its associated shifts.",
@@ -70,7 +67,7 @@ const EditJob = () => {
           text: "OK",
           style: "default",
           onPress: async () => {
-            await db?.delete(job).where(eq(job.id, jobId));
+            await deleteJob(toNumber(jobId));
             router.navigate("/");
           },
         },
@@ -120,7 +117,7 @@ const EditJob = () => {
         disabledFields={["startDate"]}
         extraButton={{
           text: "Delete",
-          onPress: () => deleteJob(toNumber(jobId)),
+          onPress: deleteCurrentJob,
         }}
         submitButtonText="Update"
       />

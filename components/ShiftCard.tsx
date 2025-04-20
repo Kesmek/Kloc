@@ -1,11 +1,12 @@
 import { Link } from "expo-router";
 import NativePlatformPressable from "./NativePlatformPressable";
 import { View, Text } from "react-native";
-import { createStyleSheet, useStyles } from "react-native-unistyles";
 import Icon from "./Icon";
 import { useMemo } from "react";
 import type { ShiftCardProps } from "@/utils/typescript";
 import { clampDuration } from "@/utils/helpers";
+import { StyleSheet } from "react-native-unistyles";
+import useActiveDuration from "@/hooks/useActiveDuration";
 
 const ShiftCard = ({
   shift,
@@ -28,31 +29,37 @@ const ShiftCard = ({
   },
   minShiftDurationMins,
   breakDurationMins,
+  jobId,
+  ongoing,
 }: ShiftCardProps) => {
-  const { styles } = useStyles(stylesheet);
   const startTime = useMemo(
-    () => Temporal.ZonedDateTime.from(shift.startTime),
+    () => Temporal.Instant.from(shift.startTime),
     [shift.startTime],
   );
   const endTime = useMemo(
-    () => (shift.endTime ? Temporal.ZonedDateTime.from(shift.endTime) : null),
+    () => (shift.endTime ? Temporal.Instant.from(shift.endTime) : null),
     [shift.endTime],
   );
-  const duration = useMemo(
-    () =>
-      durationFormat(
-        Temporal.Duration.from(shift.endTime ?? { seconds: 0 }).subtract({
-          minutes: breakDurationMins,
-        }),
-      ),
-    [breakDurationMins, durationFormat, shift.endTime],
-  );
+
+  const duration = useActiveDuration(startTime, endTime, ongoing);
+  // const duration = useMemo(
+  //   () =>
+  //     durationFormat(
+  //       Temporal.Duration.from(shift.endTime ?? { seconds: 0 }).subtract({
+  //         minutes: breakDurationMins,
+  //       }),
+  //     ),
+  //   [breakDurationMins, durationFormat, shift.endTime],
+  // );
 
   return (
     <Link
       href={{
-        pathname: `/${shift.jobId}/${shift.paycycleId}/${shift.id}`,
+        pathname: "/[jobId]/[paycycleId]/[shiftId]",
         params: {
+          jobId,
+          shiftId: shift.id,
+          paycycleId: shift.paycycleId,
           startTime: shift.startTime,
           endTime: shift.endTime,
           notes: shift.notes,
@@ -118,7 +125,7 @@ const ShiftCard = ({
   );
 };
 
-export const stylesheet = createStyleSheet((theme) => ({
+export const styles = StyleSheet.create((theme) => ({
   listButton: {
     height: theme.sizes[20],
     paddingHorizontal: theme.spacing[3],

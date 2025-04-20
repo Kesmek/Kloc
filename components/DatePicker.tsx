@@ -1,7 +1,7 @@
 import DatePicker, {
-  DatePickerProps as RNDatePickerProps,
+  type DatePickerProps as RNDatePickerProps,
 } from "react-native-date-picker";
-import { useStyles } from "react-native-unistyles";
+import { useUnistyles } from "react-native-unistyles";
 
 interface DatePickerProps
   extends Omit<
@@ -11,7 +11,7 @@ interface DatePickerProps
   date: Temporal.PlainDateTime;
   maximumDate?: Temporal.PlainDateTime;
   minimumDate?: Temporal.PlainDateTime;
-  onConfirm?: (date: Temporal.PlainDateTime) => void;
+  onConfirm?: (date: Temporal.PlainDate) => void;
 }
 
 const CustomDatePicker = ({
@@ -23,28 +23,22 @@ const CustomDatePicker = ({
   onConfirm,
   ...rest
 }: DatePickerProps) => {
-  const { theme } = useStyles();
+  const { theme } = useUnistyles();
 
   const confirmDate = (date: Date) => {
-    if (onConfirm) {
-      // const temporalDate = date
-      //   .toTemporalInstant()
-      //   .toZonedDateTimeISO(Temporal.Now.timeZoneId());
-      const temporalDate = Temporal.PlainDateTime.from(date.toString());
-      onConfirm(temporalDate);
-    }
+    const temporalDate = date
+      .toTemporalInstant()
+      .toZonedDateTimeISO(Temporal.Now.timeZoneId())
+      .toPlainDate();
+    onConfirm?.(temporalDate);
   };
 
   return (
     <DatePicker
       modal={modal}
-      date={new Date(inputDate.millisecond)}
-      maximumDate={
-        maximumDate ? new Date(maximumDate.millisecond) : undefined
-      }
-      minimumDate={
-        minimumDate ? new Date(minimumDate.millisecond) : undefined
-      }
+      date={new Date(inputDate.toString())}
+      maximumDate={maximumDate ? new Date(maximumDate.toString()) : undefined}
+      minimumDate={minimumDate ? new Date(minimumDate.toString()) : undefined}
       buttonColor={buttonColor ?? theme.colors.text}
       onConfirm={confirmDate}
       {...rest}

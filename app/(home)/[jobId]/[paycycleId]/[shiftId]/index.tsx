@@ -3,13 +3,12 @@ import Icon from "@/components/Icon";
 import NativePlatformPressable from "@/components/NativePlatformPressable";
 import Section from "@/components/Section";
 import CustomTextInput from "@/components/TextInput";
-import { SelectShift, shift } from "@/db/schema";
+import { type Shift, shift } from "@/db/schema";
 import useActiveDuration from "@/hooks/useActiveDuration";
-import { useDatabase } from "@/hooks/useDatabase";
 import usePreventBack from "@/hooks/usePreventBack";
 import { clampDuration, toNumber } from "@/utils/helpers";
 import { stringToTime } from "@/utils/shiftFunctions";
-import { Stringified } from "@/utils/typescript";
+import type { Stringified } from "@/utils/typescript";
 import { eq } from "drizzle-orm";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
@@ -18,9 +17,9 @@ import Animated, {
   useAnimatedKeyboard,
   useAnimatedStyle,
 } from "react-native-reanimated";
-import { createStyleSheet, useStyles } from "react-native-unistyles";
+import { StyleSheet } from "react-native-unistyles";
 
-const Shift = () => {
+const ShiftScreen = () => {
   const {
     shiftId,
     startTime: start_time,
@@ -28,9 +27,9 @@ const Shift = () => {
     notes: shiftNotes,
     minShiftDurationMins,
     breakDurationMins,
-    edited,
+    isEdited,
   } = useLocalSearchParams<
-    Stringified<SelectShift> & {
+    Stringified<Shift> & {
       shiftId: string;
       startTime: string;
       endTime: string;
@@ -39,7 +38,6 @@ const Shift = () => {
       breakDurationMins: string;
     }
   >();
-  const { db } = useDatabase();
   const breakDuration = useMemo(
     () => Temporal.Duration.from({ minutes: toNumber(breakDurationMins) }),
     [breakDurationMins],
@@ -54,10 +52,10 @@ const Shift = () => {
   const { setPreventBack, forceBack } = usePreventBack();
 
   const [startTime, setStartTime] = useState(
-    Temporal.ZonedDateTime.from(start_time!),
+    Temporal.PlainDateTime.from(start_time),
   );
   const [endTime, setEndTime] = useState(
-    end_time ? Temporal.ZonedDateTime.from(end_time) : null,
+    end_time ? Temporal.PlainDateTime.from(end_time) : null,
   );
   const { duration } = useActiveDuration(startTime, endTime);
   const adjustedDuration = useMemo(
@@ -68,9 +66,7 @@ const Shift = () => {
   const [notes, setNotes] = useState(shiftNotes ?? "");
   const [startTimeModalOpen, setStartTimeModalOpen] = useState(false);
   const [endTimeModalOpen, setEndTimeModalOpen] = useState(false);
-  const [isEdited, setIsEdited] = useState(edited === "true");
-
-  const { styles } = useStyles(stylesheet);
+  const [edited, setEdited] = useState(isEdited === "true");
 
   const keyboard = useAnimatedKeyboard({ isStatusBarTranslucentAndroid: true });
 
@@ -78,15 +74,15 @@ const Shift = () => {
     marginBottom: keyboard.height.value,
   }));
 
-  const onChangeStartTime = (newStart: Temporal.ZonedDateTime) => {
+  const onChangeStartTime = (newStart: Temporal.PlainDateTime) => {
     setStartTime(newStart);
-    setIsEdited(true);
+    setEdited(true);
     setStartTimeModalOpen(false);
     setPreventBack(true);
   };
-  const onChangeEndTime = (newEnd: Temporal.ZonedDateTime) => {
+  const onChangeEndTime = (newEnd: Temporal.PlainDateTime) => {
     setEndTime(newEnd);
-    setIsEdited(true);
+    setEdited(true);
     setEndTimeModalOpen(false);
     setPreventBack(true);
   };
@@ -107,7 +103,7 @@ const Shift = () => {
         startTime: startTime.toString(),
         endTime: endTime?.toString() ?? null,
         duration: endTime ? duration.toString() : null,
-        edited: isEdited,
+        isEdited: edited,
         notes,
       })
       .where(eq(shift.id, toNumber(shiftId)));
@@ -143,7 +139,7 @@ const Shift = () => {
             open={startTimeModalOpen}
             date={startTime}
             minimumDate={startTime.subtract({ hours: 36 })}
-            maximumDate={endTime ?? Temporal.Now.zonedDateTimeISO()}
+            maximumDate={endTime ?? Temporal.Now.plainDateTimeISO()}
             title={"Paycycle Start Date"}
             onConfirm={onChangeStartTime}
             onCancel={() => {
@@ -167,7 +163,7 @@ const Shift = () => {
             open={endTimeModalOpen}
             minimumDate={startTime}
             maximumDate={startTime.add({ hours: 36 })}
-            date={endTime ?? Temporal.Now.zonedDateTimeISO()}
+            date={endTime ?? Temporal.Now.plainDateTimeISO()}
             title={"Paycycle End Date"}
             onConfirm={onChangeEndTime}
             onCancel={() => setEndTimeModalOpen(false)}
@@ -247,7 +243,7 @@ const Shift = () => {
   );
 };
 
-const stylesheet = createStyleSheet((theme) => ({
+const styles = StyleSheet.create((theme) => ({
   container: {
     padding: theme.spacing[2],
     gap: theme.spacing[2],
@@ -310,4 +306,4 @@ const stylesheet = createStyleSheet((theme) => ({
   },
 }));
 
-export default Shift;
+export default ShiftScreen;

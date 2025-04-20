@@ -1,4 +1,4 @@
-import type { SelectShift } from "@/db/schema";
+import type { Shift } from "@/db/schema";
 
 export type Stringified<T> = {
   [K in keyof T]: string;
@@ -18,12 +18,13 @@ type AssertValuesExist<T, K extends keyof T> = {
   [P in keyof T]: P extends K ? NonNullable<T[K]> : T[P];
 };
 
-export interface CompleteShift
-  extends AssertValuesExist<SelectShift, "endTime"> {}
+export interface CompleteShift extends AssertValuesExist<Shift, "endTime"> {}
 
 export interface ShiftCardProps {
-  shift: SelectShift;
+  jobId: number;
+  shift: Shift;
   durationFormat?: (duration: Temporal.Duration) => string;
   minShiftDurationMins: number;
   breakDurationMins: number;
+  ongoing: boolean;
 }

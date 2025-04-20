@@ -1,18 +1,17 @@
 import Icon from "@/components/Icon";
 import NativePlatformPressable from "@/components/NativePlatformPressable";
 import Separator from "@/components/Separator";
-import { db } from "@/db/drizzle";
-import { SelectJobs, SelectPaycycle, paycycle } from "@/db/schema";
+import { useData } from "@/db/DataContext";
+import type { Job, Paycycle } from "@/db/schema";
 import { toNumber } from "@/utils/helpers";
-import { Stringified } from "@/utils/typescript";
-import { eq } from "drizzle-orm";
-import { useLiveQuery } from "drizzle-orm/expo-sqlite";
+import type { Stringified } from "@/utils/typescript";
+import { useQuery } from "@tanstack/react-query";
 import { Link, Stack, useLocalSearchParams } from "expo-router";
 import { Text } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
-import { createStyleSheet, useStyles } from "react-native-unistyles";
+import { StyleSheet } from "react-native-unistyles";
 
-const formatDate = (date: Temporal.ZonedDateTime, year?: boolean) =>
+const formatDate = (date: Temporal.PlainDate, year?: boolean) =>
   date.toLocaleString(undefined, {
     weekday: "long",
     day: "numeric",
@@ -20,42 +19,52 @@ const formatDate = (date: Temporal.ZonedDateTime, year?: boolean) =>
     year: year ? "numeric" : undefined,
   });
 
-const Job = () => {
+const JobScreen = () => {
+  const { fetchPaycycles } = useData();
+
   const {
     jobId: jid,
     paycycleDays,
-    breakDurationMins: breakDuration,
-    overtimePeriod: otPeriod,
-    overtimeBoundaryMins: otBoundary,
+    breakDurationMins,
+    overtimePeriodDays,
+    overtimeThresholdMinutes,
     name,
     description,
-  } = useLocalSearchParams<
-    Stringified<SelectJobs> & {
-      jobId: string;
-    }
-  >();
+    minShiftDurationMinutes,
+  } = useLocalSearchParams<"/[jobId]", Stringified<Job>>();
   const jobId = toNumber(jid);
-  const { data: paycycles } = useLiveQuery(
-    db.select().from(paycycle).where(eq(paycycle.jobId, jobId)),
-  );
 
-  const { styles } = useStyles(stylesheet);
+  const { data: paycycles, isLoading } = useQuery({
+    queryKey: ["paycycle"],
+    queryFn: () => fetchPaycycles(jobId),
+  });
 
-  const renderPaycycles = (paycycle: SelectPaycycle) => {
-    const start = Temporal.ZonedDateTime.from(paycycle.startDate);
+  const renderPaycycles = (paycycle: Paycycle) => {
+    const start = Temporal.PlainDate.from(paycycle.startDate);
     const end = start.add({ days: toNumber(paycycleDays) - 1 });
+    console.log(start, end);
+
     return (
       <Link
         href={{
-          pathname: `/${jobId}/${paycycle.id}/`,
+          pathname: "/[jobId]/[paycycleId]",
           params: {
+            jobId,
+            paycycleId: paycycle.id,
             startDate: paycycle.startDate,
+            endDate: paycycle.endDate,
             paycycleDays,
-            breakDurationMins: breakDuration,
+            breakDurationMins,
             description,
             name,
-            overtimePeriod: otPeriod,
-            overtimeBoundaryMins: otBoundary,
+            overtimePeriodDays,
+            overtimeThresholdMinutes,
+            minShiftDurationMinutes,
+          } satisfies Stringified<Omit<Job, "id">> & {
+            jobId: number;
+            paycycleId: number;
+            startDate: string;
+            endDate: string;
           },
         }}
         asChild
@@ -92,7 +101,7 @@ const Job = () => {
   );
 };
 
-const stylesheet = createStyleSheet((theme) => ({
+const styles = StyleSheet.create((theme) => ({
   text: {
     color: theme.colors.text,
     fontSize: theme.sizes[4],
@@ -117,4 +126,4 @@ const stylesheet = createStyleSheet((theme) => ({
   },
 }));
 
-export default Job;
+export default JobScreen;

@@ -1,11 +1,10 @@
-import { job, paycycle } from "@/db/schema";
-import { useDatabase } from "@/hooks/useDatabase";
 import { Stack, router } from "expo-router";
 import type { FormFields } from "@/components/JobForm";
 import JobForm from "@/components/JobForm";
+import { useData } from "@/db/DataContext";
 
 const CreateJob = () => {
-  const { db } = useDatabase();
+  const { createJob, createPaycycle } = useData();
 
   const submitForm = async ({
     overtimeHours,
@@ -16,26 +15,29 @@ const CreateJob = () => {
     name,
     breakDuration,
     paycyclePeriod,
-    minShiftDurationMins,
+    minShiftDurationMinutes,
   }: FormFields) => {
     try {
       const overtimeBoundaryMins = overtimeHours * 60 + overtimeMins;
-      const [returnedJob] = await db
-        ?.insert(job)
-        .values({
-          name,
-          overtimeBoundaryMins: overtimeBoundaryMins,
-          overtimePeriod: overtimeCycle,
-          breakDurationMins: breakDuration,
-          paycycleDays: paycyclePeriod,
-          description,
-          minShiftDurationMins,
-        })
-        .returning({ id: job.id });
-      await db?.insert(paycycle).values({
-        jobId: returnedJob.id,
-        startDate: startDate.startOfDay().toString(),
+      const createdJob = await createJob({
+        name,
+        overtimeThresholdMinutes: overtimeBoundaryMins,
+        overtimePeriodDays: overtimeCycle,
+        breakDurationMins: breakDuration,
+        paycycleDays: paycyclePeriod,
+        description,
+        minShiftDurationMinutes,
       });
+      if (!createdJob) {
+        console.error("Job failed to create!");
+        return router.back();
+      }
+      await createPaycycle({
+        jobId: createdJob.id,
+        startDate: startDate.toString(),
+        endDate: startDate.add({ days: createdJob.paycycleDays }).toString(),
+      });
+
       router.back();
     } catch (err: unknown) {
       console.error("Insertion Error:", err);

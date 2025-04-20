@@ -1,10 +1,9 @@
 import TextInput from "@/components/TextInput";
 import type { TextInput as RNTextInput } from "react-native-gesture-handler";
-import usePreventBack from "@/hooks/usePreventBack";
-import { createStyleSheet, useStyles } from "react-native-unistyles";
+import { StyleSheet } from "react-native-unistyles";
 import { ScrollView } from "react-native-gesture-handler";
 import { View, Text } from "react-native";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Toggle from "@/components/Toggle";
 import NativePlatformPressable from "@/components/NativePlatformPressable";
 import Icon from "@/components/Icon";
@@ -59,9 +58,7 @@ const JobForm = ({
   submitButtonText = "Confirm",
   extraButton,
 }: JobFormProps) => {
-  const { styles } = useStyles(stylesheet);
-  const { setPreventBack } = usePreventBack();
-  const keyboard = useAnimatedKeyboard({ isStatusBarTranslucentAndroid: true });
+  const keyboard = useAnimatedKeyboard();
 
   const animatedStyles = useAnimatedStyle(() => ({
     marginBottom: keyboard.height.value,
@@ -81,6 +78,7 @@ const JobForm = ({
     initialValues.overtimeCycle,
   );
   const [date, setDate] = useState(initialValues.startDate);
+
   const [dateModalOpen, setDateModalOpen] = useState(false);
   const [paycyclePeriod, setPaycyclePeriod] = useState(
     initialValues.paycyclePeriod,
@@ -141,31 +139,6 @@ const JobForm = ({
       });
     }
   };
-
-  useEffect(() => {
-    setPreventBack(
-      name !== initialValues.name ||
-        !date.equals(initialValues.startDate) ||
-        overtimeHours !== initialValues.overtimeHours.toString() ||
-        overtimeMins !== initialValues.overtimeMins.toString() ||
-        description !== initialValues.description ||
-        breakDuration !== initialValues.breakDuration.toString(),
-    );
-  }, [
-    name,
-    overtimeHours,
-    overtimeMins,
-    description,
-    date,
-    setPreventBack,
-    initialValues.name,
-    initialValues.startDate,
-    initialValues.overtimeHours,
-    initialValues.overtimeMins,
-    initialValues.description,
-    initialValues.breakDuration,
-    breakDuration,
-  ]);
 
   return (
     <AnimatedScrollView
@@ -285,7 +258,7 @@ const JobForm = ({
             date={Temporal.PlainDateTime.from(date)}
             onConfirm={(date) => {
               setDateModalOpen(false);
-              setDate(date.toPlainDate());
+              setDate(date);
             }}
             onCancel={() => {
               setDateModalOpen(false);
@@ -338,7 +311,7 @@ const JobForm = ({
   );
 };
 
-export const stylesheet = createStyleSheet((theme) => ({
+export const styles = StyleSheet.create((theme) => ({
   horizontal: {
     flexDirection: "row",
     gap: theme.spacing[1],

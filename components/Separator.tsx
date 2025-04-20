@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { createStyleSheet, useStyles } from "react-native-unistyles";
+import { StyleSheet } from "react-native-unistyles";
 
 interface SeparatorProps {
   thickness?: number;
@@ -11,7 +11,6 @@ const Separator = ({
   direction = "horizontal",
   color,
 }: SeparatorProps) => {
-  const { styles } = useStyles(stylesheet);
   return (
     <View
       style={[
@@ -31,7 +30,7 @@ const Separator = ({
   );
 };
 
-const stylesheet = createStyleSheet((theme) => ({
+const styles = StyleSheet.create((theme) => ({
   separator: { backgroundColor: theme.colors.background },
 }));
 

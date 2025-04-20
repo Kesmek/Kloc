@@ -1,10 +1,10 @@
-import { ComponentProps, forwardRef, useState } from "react";
+import { type ComponentProps, forwardRef, useState } from "react";
 import { Text, View } from "react-native";
 import {
-  NativeViewGestureHandlerProperties,
+  type NativeViewGestureHandlerProperties,
   TextInput,
 } from "react-native-gesture-handler";
-import { createStyleSheet, useStyles } from "react-native-unistyles";
+import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
 interface TextInputProps
   extends Omit<ComponentProps<typeof TextInput>, "hitSlop">,
@@ -24,8 +24,8 @@ const CustomTextInput = forwardRef<TextInput, TextInputProps>(
     },
     ref,
   ) => {
-    const { styles, theme } = useStyles(stylesheet);
     const [focused, setFocused] = useState(false);
+    const { theme } = useUnistyles();
 
     return (
       <View>
@@ -53,7 +53,7 @@ const CustomTextInput = forwardRef<TextInput, TextInputProps>(
   },
 );
 
-const stylesheet = createStyleSheet((theme) => ({
+const styles = StyleSheet.create((theme) => ({
   textInput: {
     borderWidth: theme.borderWidths.thin,
     borderColor: theme.colors.slate7,

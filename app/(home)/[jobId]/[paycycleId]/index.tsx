@@ -3,85 +3,62 @@ import Icon from "@/components/Icon";
 import NativePlatformPressable from "@/components/NativePlatformPressable";
 import Separator from "@/components/Separator";
 import Shift from "@/components/ShiftCard";
-import { db } from "@/db/drizzle";
-import {
-  type SelectJobs,
-  type SelectPaycycle,
-  paycycle,
-  shift,
-} from "@/db/schema";
+import { type Job, type Paycycle, paycycle, shift } from "@/db/schema";
 import { toNumber } from "@/utils/helpers";
 import {
   filterCompleteShift,
   filterOngoingShift,
-  getNextStartDate,
   getPaycycleStats,
-  getPrevStartDate,
-  isAfterPaycycle,
-  isBeforePaycycle,
-  isOutsidePaycycle,
 } from "@/utils/shiftFunctions";
 import type { Stringified } from "@/utils/typescript";
-import { eq } from "drizzle-orm";
-import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { Link, Stack, router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
-import { createStyleSheet, useStyles } from "react-native-unistyles";
-import { desc } from "drizzle-orm";
 import DatePicker from "@/components/DatePicker";
+import { StyleSheet } from "react-native-unistyles";
+import { useData } from "@/db/DataContext";
+import { useQuery } from "@tanstack/react-query";
+import { useShiftMutation } from "@/hooks/useStartShiftMutation";
 
-const Paycycle = () => {
-  const {
-    jobId: jid,
-    paycycleId: pcid,
-    startDate,
-    paycycleDays,
-    breakDurationMins: breakDuration,
-    overtimePeriodDays: otPeriod,
-    overtimeThresholdMinutes: otBoundary,
-    name,
-    description,
-    minShiftDurationMinutes: minShiftDuration,
-  } = useLocalSearchParams<
-    Stringified<SelectJobs> & {
-      jobId: string;
-      paycycleId: string;
-      startDate: string;
-    }
+const PaycycleScreen = () => {
+  const { jobId: jid, paycycleId: pcid } = useLocalSearchParams<
+    "/[jobId]/[paycycleId]",
+    Stringified<Job> & Stringified<Paycycle>
   >();
+
+  const { fetchShifts, fetchPaycycleById } = useData();
 
   const jobId = toNumber(jid);
   const paycycleId = toNumber(pcid);
-  const paycycleStartDate = Temporal.PlainDate.from(startDate);
-  const paycycleDurationDays = toNumber(paycycleDays);
+
+  const { data: shiftsQuery, isLoading: isLoadingShifts } = useQuery({
+    queryKey: ["shifts", paycycleId],
+    queryFn: () => fetchShifts(paycycleId), // Fetch function using Drizzle
+  });
+
+  const { data: currentPaycycle, isLoading: isLoadingPaycycle } = useQuery({
+    queryKey: ["shifts", paycycleId],
+    queryFn: () => fetchPaycycleById(jobId, paycycleId), // Fetch function using Drizzle
+  });
+
+  const mutation = useShiftMutation();
+
   const today = Temporal.Now.plainDateTimeISO();
   const breakDurationMins = toNumber(breakDuration);
   const overtimePeriod = toNumber(otPeriod);
   const overtimeBoundaryMins = toNumber(otBoundary);
   const minShiftDurationMins = toNumber(minShiftDuration);
 
-  const { data: shiftsQuery } = useLiveQuery(
-    db
-      .select()
-      .from(shift)
-      .where(eq(shift.paycycleId, paycycleId))
-      .orderBy(desc(shift.startTime)),
-  );
-
-  const { styles, theme } = useStyles(stylesheet);
-
   const [dateModalOpen, setDateModalOpen] = useState(false);
   const [ongoingShift, setOngoingShift] = useState(
-    shiftsQuery.find(filterOngoingShift),
+    shiftsQuery?.find(filterOngoingShift),
   );
 
   const renderHeader = () => {
-    const cycleStart = paycycleStartDate;
-    // Subtract one because the first day is included in the paycycle duration
-    const periodEnd = cycleStart.add({ days: paycycleDurationDays - 1 });
-    const shifts = shiftsQuery.filter(filterCompleteShift);
+    const cycleStart = currentPaycycle?.startDate;
+    const periodEnd = currentPaycycle?.endDate;
+    const shifts = shiftsQuery?.filter(filterCompleteShift) ?? [];
 
     const {
       totalRegularHours,
@@ -101,8 +78,9 @@ const Paycycle = () => {
         <View style={styles.vertical}>
           <Link
             href={{
-              pathname: `/${jobId}`,
+              pathname: "/[jobId]",
               params: {
+                jobId,
                 name,
                 description,
                 overtimeBoundaryMins,
@@ -147,108 +125,39 @@ const Paycycle = () => {
   };
 
   const handlePressImmediate = async () => {
-    const now = Temporal.Now.plainDateTimeISO();
+    const now = Temporal.Now.instant();
     await handlePressScheduled(now, false);
   };
 
   const handlePressScheduled = async (
-    dateTime: Temporal.PlainDateTime,
+    instant: Temporal.Instant,
     isEdited = true,
   ) => {
     if (ongoingShift) {
-      await db
-        ?.update(shift)
-        .set({
-          endTime: dateTime.toString(),
-          isEdited,
-        })
-        .where(eq(shift.id, ongoingShift.id));
+      mutation.mutate({
+        id: ongoingShift.id,
+        startTime: ongoingShift.startTime,
+        isEdited,
+        paycycleId,
+        endTime: instant.toString(),
+      });
       setOngoingShift(undefined);
     } else {
-      const shiftOutsidePeriod = isOutsidePaycycle(
-        paycycleStartDate,
-        paycycleDurationDays,
-        dateTime,
-      );
-      let newCycle: SelectPaycycle = {
-        id: paycycleId,
-        jobId,
-        startDate: paycycleStartDate.toString(),
-      };
-
-      // After pay cycle
-      if (shiftOutsidePeriod > 0) {
-        let nextCycleStart = paycycleStartDate;
-
-        do {
-          nextCycleStart = getNextStartDate(
-            paycycleStartDate,
-            paycycleDurationDays,
-          );
-
-          [newCycle] = await db
-            ?.insert(paycycle)
-            .values({
-              jobId,
-              startDate: nextCycleStart.toString(),
-            })
-            .returning();
-        } while (
-          // Need to add paycycle duration to start date
-          isAfterPaycycle(
-            nextCycleStart.add({ days: paycycleDurationDays }),
-            dateTime,
-          )
-        );
-      } else if (shiftOutsidePeriod < 0) {
-        // Before pay cycle
-        let prevCycleStart = paycycleStartDate;
-
-        do {
-          prevCycleStart = getPrevStartDate(
-            paycycleStartDate,
-            paycycleDurationDays,
-          );
-          // Grab first index since it's guaranteed to only return one element anyway
-          [newCycle] = await db
-            ?.insert(paycycle)
-            .values({
-              jobId,
-              startDate: prevCycleStart.toString(),
-            })
-            .onConflictDoNothing()
-            .returning();
-        } while (isBeforePaycycle(prevCycleStart, dateTime));
-      }
-
-      await db?.insert(shift).values({
-        startTime: dateTime.toString(),
-        endTime: dateTime.add({ days: paycycleDurationDays }),
-        jobId,
-        paycycleId: newCycle.id,
+      mutation.mutate({
+        paycycleId,
+        startTime: instant.toString(),
         isEdited,
       });
-      if (newCycle.id !== paycycleId) {
-        router.replace({
-          pathname: `${jobId}/${newCycle.id}/`,
-          params: {
-            startDate,
-            paycycleDays,
-            breakDurationMins,
-            overtimePeriod,
-            overtimeBoundaryMins,
-            name,
-            description,
-            minShiftDurationMins,
-          },
-        });
-      }
     }
   };
 
   useEffect(() => {
-    setOngoingShift(shiftsQuery.find(filterOngoingShift));
+    setOngoingShift(shiftsQuery?.find(filterOngoingShift));
   }, [shiftsQuery]);
+
+  if (!shiftsQuery) {
+    return <Text>Loading...</Text>;
+  }
 
   return (
     <>
@@ -258,8 +167,9 @@ const Paycycle = () => {
           headerRight: (props) => (
             <Link
               href={{
-                pathname: `/${jobId}/edit`,
+                pathname: "/[jobId]/edit",
                 params: {
+                  jobId,
                   name,
                   description,
                   overtimeBoundaryMins,
@@ -301,6 +211,8 @@ const Paycycle = () => {
               shift={item}
               minShiftDurationMins={minShiftDurationMins}
               breakDurationMins={breakDurationMins}
+              ongoing={false}
+              jobId={jobId}
             />
           )}
           ItemSeparatorComponent={Separator}
@@ -313,12 +225,16 @@ const Paycycle = () => {
       <DatePicker
         open={dateModalOpen}
         title={"Select Date"}
-        minimumDate={Temporal.PlainDateTime.from(paycycleStartDate)}
-        maximumDate={today}
+        minimumDate={
+          currentPaycycle?.startDate
+            ? Temporal.PlainDateTime.from(currentPaycycle.startDate)
+            : undefined
+        }
+        maximumDate={Temporal.Now.plainDateTimeISO()}
         mode="datetime"
         date={Temporal.Now.plainDateTimeISO()}
         onConfirm={(date) => {
-          handlePressScheduled(date);
+          handlePressScheduled(Temporal.Instant.from(date.toString()));
           setDateModalOpen(false);
         }}
         onCancel={() => {
@@ -327,10 +243,12 @@ const Paycycle = () => {
       />
       <View style={styles.bottomContainer}>
         {ongoingShift && (
-          <ActiveShift
+          <Shift
             shift={ongoingShift}
             minShiftDurationMins={minShiftDurationMins}
             breakDurationMins={breakDurationMins}
+            jobId={jobId}
+            ongoing
           />
         )}
         <View style={styles.buttonContainer}>
@@ -341,7 +259,7 @@ const Paycycle = () => {
             ]}
             onPress={() => setDateModalOpen(true)}
           >
-            <Icon name="clock" color={theme.colors.textDark} />
+            <Icon name="clock" style={styles.icon} />
             <Text style={styles.buttonText}>
               {ongoingShift ? "End At..." : "Start At..."}
             </Text>
@@ -353,7 +271,7 @@ const Paycycle = () => {
             ]}
             onPress={handlePressImmediate}
           >
-            <Icon name="clock" color={theme.colors.textDark} />
+            <Icon name="clock" style={styles.icon} />
             <Text style={styles.buttonText}>
               {ongoingShift ? "End" : "Start"}
             </Text>
@@ -364,7 +282,7 @@ const Paycycle = () => {
   );
 };
 
-const stylesheet = createStyleSheet((theme) => ({
+const styles = StyleSheet.create((theme) => ({
   button: {
     flexDirection: "row",
     gap: theme.spacing[2],
@@ -438,6 +356,9 @@ const stylesheet = createStyleSheet((theme) => ({
   bottomContainer: {
     backgroundColor: theme.colors.slate2,
   },
+  icon: {
+    color: theme.colors.textDark,
+  },
 }));
 
-export default Paycycle;
+export default PaycycleScreen;
