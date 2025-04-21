@@ -52,7 +52,8 @@ export type NewPaycycle = typeof paycycle.$inferInsert;
 export type Shift = typeof shift.$inferSelect;
 export type NewShift = typeof shift.$inferInsert;
 
-export type PaycycleStatistics = Omit<Job, "id"> &
-  Omit<Paycycle, "id"> & {
-    paycycleId: number;
-  };
+export interface PaycycleStatistics
+  extends Omit<Job, "id">,
+    Omit<Paycycle, "id"> {
+  paycycleId: number;
+}

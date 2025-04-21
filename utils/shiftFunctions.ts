@@ -46,9 +46,9 @@ const getRawTotalShiftDuration = (shifts: Shift[]) =>
   shifts.reduce(
     (acc, shift) =>
       acc.add(
-        // If no endTime i.e. ongoing do not inclute shift in duration calculation
+        // If no endTime i.e. ongoing do not include shift in duration calculation
         shift.endTime
-          ? Temporal.Instant.from(shift.startTime).since(shift.startTime)
+          ? Temporal.Instant.from(shift.endTime).since(shift.startTime)
           : Temporal.Duration.from({ seconds: 0 }),
       ),
     Temporal.Duration.from({ seconds: 0 }),

@@ -27,8 +27,7 @@ const PaycycleScreen = () => {
     Stringified<Job> & Stringified<Paycycle>
   >();
 
-  const { fetchShifts, fetchPaycycleStatsById: fetchPaycycleStatsById } =
-    useData();
+  const { fetchShifts, fetchPaycycleStatsById } = useData();
 
   const jobId = toNumber(jid);
   const paycycleId = toNumber(pcid);
@@ -38,17 +37,22 @@ const PaycycleScreen = () => {
     queryFn: () => fetchShifts(paycycleId), // Fetch function using Drizzle
   });
 
-  const { data: currentPaycycle, isLoading: isLoadingPaycycle } = useQuery({
+  const { data: paycycleStats, isLoading: isLoadingPaycycle } = useQuery({
     queryKey: ["shifts", paycycleId],
     queryFn: () => fetchPaycycleStatsById(jobId, paycycleId), // Fetch function using Drizzle
   });
 
   const mutation = useShiftMutation();
 
-  const breakDurationMins = toNumber(breakDuration);
-  const overtimePeriod = toNumber(otPeriod);
-  const overtimeBoundaryMins = toNumber(otBoundary);
-  const minShiftDurationMins = toNumber(minShiftDuration);
+  const name = paycycleStats?.name ?? "";
+  const description = paycycleStats?.description ?? "";
+  const paycycleDays = paycycleStats?.paycycleDays ?? 0;
+  const breakDurationMinutes = paycycleStats?.breakDurationMinutes ?? 0;
+  const overtimePeriodDays = paycycleStats?.overtimePeriodDays ?? 0;
+  const overtimeThresholdMinutes = paycycleStats?.overtimeThresholdMinutes ?? 0;
+  const minShiftDurationMinutes = paycycleStats?.minShiftDurationMinutes ?? 0;
+  const cycleStart = paycycleStats?.startDate;
+  const periodEnd = paycycleStats?.endDate;
 
   const [dateModalOpen, setDateModalOpen] = useState(false);
   const [ongoingShift, setOngoingShift] = useState(
@@ -56,8 +60,6 @@ const PaycycleScreen = () => {
   );
 
   const renderHeader = () => {
-    const cycleStart = currentPaycycle?.startDate;
-    const periodEnd = currentPaycycle?.endDate;
     const shifts = shiftsQuery?.filter(filterCompleteShift) ?? [];
 
     const {
@@ -67,10 +69,10 @@ const PaycycleScreen = () => {
       totalWeekTwoHours,
     } = getPaycycleStats(
       shifts,
-      overtimePeriod,
-      overtimeBoundaryMins,
-      breakDurationMins,
-      paycycleStartDate,
+      overtimePeriodDays,
+      overtimeThresholdMinutes,
+      breakDurationMinutes,
+      cycleStart,
     );
 
     return (
@@ -83,11 +85,9 @@ const PaycycleScreen = () => {
                 jobId,
                 name,
                 description,
-                overtimeBoundaryMins,
-                overtimePeriod,
-                breakDurationMins,
-                paycycleDays,
-                paycycleId,
+                overtimeBoundaryMins: overtimeThresholdMinutes,
+                overtimePeriod: overtimePeriodDays,
+                breakDurationMins: breakDurationMinutes,
               },
             }}
             asChild
@@ -95,7 +95,7 @@ const PaycycleScreen = () => {
             <NativePlatformPressable style={styles.headerButton} unstyled>
               <Icon name="calendar" style={styles.headerSecondaryText} />
               <Text style={styles.headerSecondaryText}>
-                {`${cycleStart.toLocaleString(undefined, { month: "short", day: "numeric" })} - ${periodEnd.toLocaleString(undefined, { month: "short", day: "numeric" })}`}
+                {`${paycycleStats?.startDate.toLocaleString()} - ${paycycleStats?.endDate.toLocaleString()}`}
               </Text>
             </NativePlatformPressable>
           </Link>
@@ -172,11 +172,11 @@ const PaycycleScreen = () => {
                   jobId,
                   name,
                   description,
-                  overtimeBoundaryMins,
-                  overtimePeriod,
-                  breakDurationMins,
+                  overtimeBoundaryMins: overtimeThresholdMinutes,
+                  overtimePeriod: overtimePeriodDays,
+                  breakDurationMins: breakDurationMinutes,
                   paycycleDays,
-                  minShiftDurationMins,
+                  minShiftDurationMins: minShiftDurationMinutes,
                 },
               }}
               asChild
@@ -209,8 +209,8 @@ const PaycycleScreen = () => {
           renderItem={({ item }) => (
             <Shift
               shift={item}
-              minShiftDurationMins={minShiftDurationMins}
-              breakDurationMins={breakDurationMins}
+              minShiftDurationMins={minShiftDurationMinutes}
+              breakDurationMins={breakDurationMinutes}
               ongoing={false}
               jobId={jobId}
             />
@@ -226,8 +226,8 @@ const PaycycleScreen = () => {
         open={dateModalOpen}
         title={"Select Date"}
         minimumDate={
-          currentPaycycle?.startDate
-            ? Temporal.PlainDateTime.from(currentPaycycle.startDate)
+          paycycleStats?.startDate
+            ? Temporal.PlainDateTime.from(paycycleStats.startDate)
             : undefined
         }
         maximumDate={Temporal.Now.plainDateTimeISO()}
@@ -245,8 +245,8 @@ const PaycycleScreen = () => {
         {ongoingShift && (
           <Shift
             shift={ongoingShift}
-            minShiftDurationMins={minShiftDurationMins}
-            breakDurationMins={breakDurationMins}
+            minShiftDurationMins={minShiftDurationMinutes}
+            breakDurationMins={breakDurationMinutes}
             jobId={jobId}
             ongoing
           />

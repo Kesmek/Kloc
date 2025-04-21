@@ -17,7 +17,7 @@ import {
   type NewPaycycle,
   type NewShift,
   type Paycycle,
-  PaycycleStatistics,
+  type PaycycleStatistics,
   type Shift,
   job,
   paycycle,
@@ -71,7 +71,7 @@ interface DataContextType {
   fetchPaycycleStatsById: (
     jobId: number,
     paycycleId: number,
-  ) => Promise<Paycycle | undefined>;
+  ) => Promise<PaycycleStatistics | undefined>;
   isMigrating: boolean;
   migrationError: Error | undefined;
   isSyncing: boolean;
@@ -142,7 +142,7 @@ PRAGMA foreign_keys = ON;
 
   const fetchPaycycleStatsById = useCallback(
     async (jobId: number, paycycleId: number) => {
-      let result: PaycycleStatistics | undefined;
+      let result: PaycycleStatistics[] | undefined;
       try {
         // Use Drizzle's select syntax
         result = await drizzleDb
@@ -154,6 +154,7 @@ PRAGMA foreign_keys = ON;
             breakDurationMinutes: job.breakDurationMinutes,
             minShiftDurationMinutes: job.minShiftDurationMinutes,
             overtimePeriodDays: job.overtimePeriodDays,
+            paycycleDays: job.paycycleDays,
             paycycleId: paycycle.id,
             startDate: paycycle.startDate,
             endDate: paycycle.endDate,
