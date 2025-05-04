@@ -13,6 +13,7 @@ export const job = sqliteTable("job", {
   minShiftDurationMinutes: integer("min_shift_duration_minutes")
     .notNull()
     .default(180),
+  timezone: text("timezone").default("America/Toronto").notNull(),
 });
 
 export const paycycle = sqliteTable("paycycle", {
@@ -40,6 +41,7 @@ export const shift = sqliteTable("shift", {
   startTime: text("start_time").notNull(),
   endTime: text("end_time"),
   notes: text("notes"),
+  breakDurationMinutes: integer("break_duration_minutes").notNull().default(30),
   isEdited: integer("is_edited", { mode: "boolean" }).notNull(),
 });
 

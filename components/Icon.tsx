@@ -2,15 +2,15 @@ import Feather from "@expo/vector-icons/Feather";
 import type { ComponentProps } from "react";
 import { StyleSheet } from "react-native-unistyles";
 
-interface IconProps extends ComponentProps<typeof Feather> {}
+type IconProps = ComponentProps<typeof Feather>;
 
 const Icon = ({ name, size, color, style }: IconProps) => {
   return (
     <Feather
+      style={[styles.icon, style]}
       name={name}
       size={size}
       color={color}
-      style={[styles.icon, style]}
     />
   );
 };

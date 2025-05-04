@@ -18,7 +18,7 @@ type AssertValuesExist<T, K extends keyof T> = {
   [P in keyof T]: P extends K ? NonNullable<T[K]> : T[P];
 };
 
-export interface CompleteShift extends AssertValuesExist<Shift, "endTime"> {}
+export type CompleteShift = AssertValuesExist<Shift, "endTime">;
 
 export interface ShiftCardProps {
   jobId: number;

@@ -81,6 +81,7 @@ export const getPaycycleStats = (
   overtimeBoundaryMins: number,
   breakDurationMins: number,
   paycycleStartDate: Temporal.PlainDate,
+  timezone: Temporal.TimeZoneLike,
 ) => {
   const totalDuration = getRawTotalShiftDuration(shifts);
   const totalDurationAdjusted = getTotalShiftDuration(
@@ -101,6 +102,7 @@ export const getPaycycleStats = (
       overtimeBoundaryMins,
       breakDurationMins,
       paycycleStartDate,
+      timezone,
     );
   }
 
@@ -108,6 +110,7 @@ export const getPaycycleStats = (
     shifts,
     breakDurationMins,
     paycycleStartDate,
+    timezone,
   );
 
   return {
@@ -126,6 +129,7 @@ export const getWeeklyStats = (
   shifts: Shift[],
   breakDurationMins: number,
   paycycleStartDate: Temporal.PlainDate,
+  timezone: Temporal.TimeZoneLike,
 ) => {
   //get the shifts in the first of the 2 weeks
   const firstWeekEndDate = paycycleStartDate.add({ weeks: 1 });
@@ -133,7 +137,11 @@ export const getWeeklyStats = (
     (shift) =>
       //check if the start time is earlier than one week after the paycycles' start
       Temporal.PlainDate.compare(
-        Temporal.PlainDate.from(shift.startTime),
+        Temporal.PlainDate.from(
+          Temporal.Instant.from(shift.startTime)
+            .toZonedDateTimeISO(timezone)
+            .toPlainDate(),
+        ),
         firstWeekEndDate,
       ) < 0,
   );
@@ -160,11 +168,13 @@ export const getOvertimeHoursWeekly = (
   overtimeBoundaryMins: number,
   breakDurationMins: number,
   paycycleStartDate: Temporal.PlainDate,
+  timezone: Temporal.TimeZoneLike,
 ) => {
   const { weekTwoTotalDuration, weekOneTotalDuration } = getWeeklyStats(
     shifts,
     breakDurationMins,
     paycycleStartDate,
+    timezone,
   );
 
   const weekOneOvertime = clampDuration(
@@ -213,9 +223,23 @@ export const getOvertimeHoursDaily = (
   return totalOvertime;
 };
 
-export const stringToTime = (str: string) => {
-  const matches = str.match(/(\d{1,3}\w{1})|(-)/g);
-  return matches?.join(" ") ?? "";
+export const longFormDuration = (duration: Temporal.Duration) => {
+  const balancedDuration = duration.round({
+    largestUnit: "hours",
+    smallestUnit: "seconds",
+  });
+
+  let formattedDuration = "";
+  if (balancedDuration.hours > 0) {
+    formattedDuration += `${balancedDuration.hours.toString()}H `;
+  }
+  if (balancedDuration.minutes > 0) {
+    formattedDuration += `${balancedDuration.minutes.toString()}M `;
+  }
+  if (balancedDuration.seconds > 0 || formattedDuration.length === 0) {
+    formattedDuration += `${balancedDuration.seconds.toString()}S `;
+  }
+  return formattedDuration.trimEnd();
 };
 
 export const filterOngoingShift = (shift: Shift) => !filterCompleteShift(shift);

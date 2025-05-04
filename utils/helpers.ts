@@ -1,3 +1,7 @@
+import type { StyleProp, ViewStyle } from "react-native";
+import type { AnimatedStyle } from "react-native-reanimated";
+import { StyleSheet } from "react-native-unistyles";
+
 export const clamp = (
   lower: number,
   value: number,
@@ -18,19 +22,33 @@ export const clampDuration = (
   if (maxDuration) {
     return Temporal.Duration.compare(tempDuration, maxDuration) > 0
       ? maxDuration
-      : duration;
-  } else {
-    return tempDuration;
+      : tempDuration;
   }
+  return tempDuration;
 };
 
 export const toNumber = (str?: string) => {
   const num = Number(str);
-  return isNaN(num) ? 0 : num;
+  return Number.isNaN(num) ? 0 : num;
 };
 
 export const isInteger = (str: string) => {
   const num = Number.parseInt(str);
   const regexTest = /^\d+$/.test(str);
-  return !isNaN(num) && Number.isInteger(num) && num >= 0 && regexTest;
+  return !Number.isNaN(num) && Number.isInteger(num) && num >= 0 && regexTest;
+};
+
+export const getStyleProp = (
+  style: AnimatedStyle<StyleProp<ViewStyle>> | StyleProp<ViewStyle>,
+  keyToGet: keyof ViewStyle,
+) => {
+  const flattenedStyle = StyleSheet.flatten(style);
+
+  if (flattenedStyle && Object.hasOwn(flattenedStyle, keyToGet)) {
+    return flattenedStyle[keyToGet as keyof typeof flattenedStyle];
+  }
+
+  // Return false if style is empty/falsy, key doesn't exist,
+  // or the value associated with the key is not a number.
+  return false;
 };

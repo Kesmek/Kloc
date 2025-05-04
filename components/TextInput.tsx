@@ -1,10 +1,11 @@
+/* eslint-disable react/display-name */
 import { type ComponentProps, forwardRef, useState } from "react";
 import { Text, View } from "react-native";
 import {
   type NativeViewGestureHandlerProperties,
   TextInput,
 } from "react-native-gesture-handler";
-import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { StyleSheet, withUnistyles } from "react-native-unistyles";
 
 interface TextInputProps
   extends Omit<ComponentProps<typeof TextInput>, "hitSlop">,
@@ -12,6 +13,11 @@ interface TextInputProps
   error?: boolean;
   errorMessage?: string;
 }
+
+const UniTextInput = withUnistyles(TextInput, (theme) => ({
+  placeholderTextColor: theme.colors.slate7,
+  cursorColor: theme.colors.text,
+}));
 
 const CustomTextInput = forwardRef<TextInput, TextInputProps>(
   (
@@ -25,11 +31,10 @@ const CustomTextInput = forwardRef<TextInput, TextInputProps>(
     ref,
   ) => {
     const [focused, setFocused] = useState(false);
-    const { theme } = useUnistyles();
 
     return (
       <View>
-        <TextInput
+        <UniTextInput
           style={[
             styles.textInput,
             focused && styles.focused,
@@ -39,9 +44,7 @@ const CustomTextInput = forwardRef<TextInput, TextInputProps>(
           ref={ref}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          placeholderTextColor={theme.colors.slate7}
           placeholder="Input text..."
-          cursorColor={theme.colors.text}
           maxLength={maxLength}
           {...textInputProps}
         />

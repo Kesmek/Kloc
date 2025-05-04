@@ -1,17 +1,24 @@
-import { StyleProp, TextStyle, ViewProps } from "react-native";
+import {
+  View,
+  type ViewStyle,
+  type StyleProp,
+  type TextStyle,
+  type ViewProps,
+} from "react-native";
 import Label from "./Label";
 
-interface SectionProps extends ViewProps {
+interface SectionProps extends Omit<ViewProps, "style"> {
   title?: string;
-  style?: StyleProp<TextStyle>;
+  style?: StyleProp<ViewStyle>;
+  titleStyle?: StyleProp<TextStyle>;
 }
 
-const Section = ({ children, title, style }: SectionProps) => {
+const Section = ({ children, title, style, titleStyle }: SectionProps) => {
   return (
-    <>
-      <Label style={style}>{title}</Label>
+    <View style={style}>
+      <Label style={titleStyle}>{title}</Label>
       {children}
-    </>
+    </View>
   );
 };
 

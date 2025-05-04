@@ -1,5 +1,4 @@
 import { Link } from "expo-router";
-import NativePlatformPressable from "./NativePlatformPressable";
 import { View, Text } from "react-native";
 import Icon from "./Icon";
 import { useMemo } from "react";
@@ -7,6 +6,8 @@ import type { ShiftCardProps } from "@/utils/typescript";
 import { clampDuration } from "@/utils/helpers";
 import { StyleSheet } from "react-native-unistyles";
 import useActiveDuration from "@/hooks/useActiveDuration";
+import { longFormDuration } from "@/utils/shiftFunctions";
+import { RectButton } from "react-native-gesture-handler";
 
 const ShiftCard = ({
   shift,
@@ -27,8 +28,6 @@ const ShiftCard = ({
         : "",
     );
   },
-  minShiftDurationMins,
-  breakDurationMins,
   jobId,
   ongoing,
 }: ShiftCardProps) => {
@@ -41,16 +40,7 @@ const ShiftCard = ({
     [shift.endTime],
   );
 
-  const duration = useActiveDuration(startTime, endTime, ongoing);
-  // const duration = useMemo(
-  //   () =>
-  //     durationFormat(
-  //       Temporal.Duration.from(shift.endTime ?? { seconds: 0 }).subtract({
-  //         minutes: breakDurationMins,
-  //       }),
-  //     ),
-  //   [breakDurationMins, durationFormat, shift.endTime],
-  // );
+  const { duration } = useActiveDuration(startTime, endTime, ongoing);
 
   return (
     <Link
@@ -60,17 +50,11 @@ const ShiftCard = ({
           jobId,
           shiftId: shift.id,
           paycycleId: shift.paycycleId,
-          startTime: shift.startTime,
-          endTime: shift.endTime,
-          notes: shift.notes,
-          edited: `${shift.isEdited}`,
-          minShiftDurationMins,
-          breakDurationMins,
         },
       }}
       asChild
     >
-      <NativePlatformPressable unstyled style={styles.listButton}>
+      <RectButton style={styles.listButton}>
         <View style={styles.leftInfo}>
           <View style={[styles.horizontal, styles.dateContainer]}>
             <Text style={styles.date}>
@@ -87,7 +71,7 @@ const ShiftCard = ({
               })}
             </Text>
             {shift.isEdited && (
-              <Text style={[styles.secondaryText, styles.edited]}>edited</Text>
+              <Text style={[styles.secondaryText]}>edited</Text>
             )}
           </View>
           {shift.notes && (
@@ -98,8 +82,8 @@ const ShiftCard = ({
         </View>
         <View style={styles.rightInfo}>
           <View style={[styles.horizontal]}>
-            <Icon name="arrow-down-right" style={styles.punchIn} />
-            <Text style={[styles.text, styles.punchIn]}>
+            <Icon name="arrow-down-right" style={styles.startShift} />
+            <Text style={[styles.text, styles.startShift]}>
               {startTime.toLocaleString(undefined, {
                 timeStyle: "short",
               })}
@@ -107,20 +91,32 @@ const ShiftCard = ({
           </View>
           {endTime && (
             <View style={[styles.horizontal]}>
-              <Icon name="arrow-up-right" style={styles.punchOut} />
-              <Text style={[styles.text, styles.punchOut]}>
+              <Icon name="arrow-up-right" style={styles.endShift} />
+              <Text style={[styles.text, styles.endShift]}>
                 {endTime.toLocaleString(undefined, {
                   timeStyle: "short",
                 })}
               </Text>
             </View>
           )}
+          {/* <View style={[styles.horizontal]}> */}
+          {/*   <Icon name="pause" style={[styles.break, styles.breakIcon]} /> */}
+          {/*   <Text style={[styles.text, styles.break]}> */}
+          {/*     {longFormDuration(breakDuration)} */}
+          {/*   </Text> */}
+          {/* </View> */}
           <View style={[styles.horizontal]}>
             <Icon name="clock" style={styles.duration} />
-            <Text style={[styles.text, styles.duration]}>{duration}</Text>
+            <Text style={[styles.text, styles.duration]}>
+              {ongoing
+                ? longFormDuration(duration)
+                : durationFormat(
+                    duration.subtract({ minutes: shift.breakDurationMinutes }),
+                  )}
+            </Text>
           </View>
         </View>
-      </NativePlatformPressable>
+      </RectButton>
     </Link>
   );
 };
@@ -128,7 +124,7 @@ const ShiftCard = ({
 export const styles = StyleSheet.create((theme) => ({
   listButton: {
     height: theme.sizes[20],
-    paddingHorizontal: theme.spacing[3],
+    paddingHorizontal: theme.spacing[5],
     paddingVertical: theme.spacing[1],
     backgroundColor: theme.colors.slate2,
     gap: theme.spacing["0.5"],
@@ -138,16 +134,13 @@ export const styles = StyleSheet.create((theme) => ({
     fontSize: theme.sizes[4],
     fontWeight: "500",
   },
-  punchIn: {
-    color: theme.colors.green11,
-  },
-  punchInIcon: {
+  startShift: {
     color: theme.colors.green11,
   },
   duration: {
     color: theme.colors.iris11,
   },
-  punchOut: {
+  endShift: {
     color: theme.colors.red11,
   },
   dayOfWeek: {
@@ -183,7 +176,12 @@ export const styles = StyleSheet.create((theme) => ({
   secondaryText: {
     color: theme.colors.textSecondary,
   },
-  edited: {},
+  break: {
+    color: theme.colors.text,
+  },
+  breakIcon: {
+    fontSize: theme.sizes[5],
+  },
 }));
 
 export default ShiftCard;

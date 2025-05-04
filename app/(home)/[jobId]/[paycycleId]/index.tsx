@@ -1,66 +1,72 @@
-import ActiveShift from "@/components/ActiveShift";
 import Icon from "@/components/Icon";
-import NativePlatformPressable from "@/components/NativePlatformPressable";
 import Separator from "@/components/Separator";
 import Shift from "@/components/ShiftCard";
-import { type Job, type Paycycle, paycycle, shift } from "@/db/schema";
 import { toNumber } from "@/utils/helpers";
 import {
   filterCompleteShift,
   filterOngoingShift,
   getPaycycleStats,
 } from "@/utils/shiftFunctions";
-import type { Stringified } from "@/utils/typescript";
-import { Link, Stack, router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { router, Stack, useLocalSearchParams } from "expo-router";
+import { Suspense, useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
-import DatePicker from "@/components/DatePicker";
 import { StyleSheet } from "react-native-unistyles";
 import { useData } from "@/db/DataContext";
-import { useQuery } from "@tanstack/react-query";
-import { useShiftMutation } from "@/hooks/useStartShiftMutation";
+import { useSuspenseQueries } from "@tanstack/react-query";
+import { useShiftMutation } from "@/hooks/useShiftMutation";
+import DateTimePicker from "@/components/DateTimePicker";
+import Button from "@/components/Button";
+import Loading from "@/components/Loading";
 
 const PaycycleScreen = () => {
-  const { jobId: jid, paycycleId: pcid } = useLocalSearchParams<
-    "/[jobId]/[paycycleId]",
-    Stringified<Job> & Stringified<Paycycle>
-  >();
+  const { jobId: jid, paycycleId: pcid } =
+    useLocalSearchParams<"/[jobId]/[paycycleId]">();
 
   const { fetchShifts, fetchPaycycleStatsById } = useData();
 
   const jobId = toNumber(jid);
   const paycycleId = toNumber(pcid);
 
-  const { data: shiftsQuery, isLoading: isLoadingShifts } = useQuery({
-    queryKey: ["shifts", paycycleId],
-    queryFn: () => fetchShifts(paycycleId), // Fetch function using Drizzle
+  const [shiftsQuery, paycyclesQuery] = useSuspenseQueries({
+    queries: [
+      {
+        queryKey: ["shifts", paycycleId],
+        queryFn: () => fetchShifts(paycycleId),
+      },
+      {
+        queryKey: ["paycycleStats", jobId, paycycleId],
+        queryFn: () => fetchPaycycleStatsById(jobId, paycycleId), // Fetch function using Drizzle
+      },
+    ],
   });
 
-  const { data: paycycleStats, isLoading: isLoadingPaycycle } = useQuery({
-    queryKey: ["shifts", paycycleId],
-    queryFn: () => fetchPaycycleStatsById(jobId, paycycleId), // Fetch function using Drizzle
-  });
+  const shifts = shiftsQuery.data;
+  const paycycleStats = paycyclesQuery.data!;
 
-  const mutation = useShiftMutation();
-
-  const name = paycycleStats?.name ?? "";
-  const description = paycycleStats?.description ?? "";
-  const paycycleDays = paycycleStats?.paycycleDays ?? 0;
-  const breakDurationMinutes = paycycleStats?.breakDurationMinutes ?? 0;
-  const overtimePeriodDays = paycycleStats?.overtimePeriodDays ?? 0;
-  const overtimeThresholdMinutes = paycycleStats?.overtimeThresholdMinutes ?? 0;
-  const minShiftDurationMinutes = paycycleStats?.minShiftDurationMinutes ?? 0;
-  const cycleStart = paycycleStats?.startDate;
-  const periodEnd = paycycleStats?.endDate;
+  const { createShiftMutation, updateShiftMutation } = useShiftMutation();
 
   const [dateModalOpen, setDateModalOpen] = useState(false);
-  const [ongoingShift, setOngoingShift] = useState(
-    shiftsQuery?.find(filterOngoingShift),
+  const [ongoingShift, setOngoingShift] = useState(() =>
+    shifts.find(filterOngoingShift),
   );
 
+  useEffect(() => {
+    setOngoingShift(shifts.find(filterOngoingShift));
+  }, [shifts]);
+
+  const {
+    name,
+    startDate,
+    breakDurationMinutes,
+    overtimeThresholdMinutes,
+    overtimePeriodDays,
+    minShiftDurationMinutes,
+    timezone,
+  } = paycycleStats;
+
   const renderHeader = () => {
-    const shifts = shiftsQuery?.filter(filterCompleteShift) ?? [];
+    const completeShifts = shifts.filter(filterCompleteShift) ?? [];
 
     const {
       totalRegularHours,
@@ -68,46 +74,32 @@ const PaycycleScreen = () => {
       totalWeekOneHours,
       totalWeekTwoHours,
     } = getPaycycleStats(
-      shifts,
+      completeShifts,
       overtimePeriodDays,
       overtimeThresholdMinutes,
       breakDurationMinutes,
-      cycleStart,
+      Temporal.PlainDate.from(startDate),
+      timezone,
     );
 
     return (
       <View style={styles.header}>
         <View style={styles.vertical}>
-          <Link
-            href={{
-              pathname: "/[jobId]",
-              params: {
-                jobId,
-                name,
-                description,
-                overtimeBoundaryMins: overtimeThresholdMinutes,
-                overtimePeriod: overtimePeriodDays,
-                breakDurationMins: breakDurationMinutes,
-              },
-            }}
-            asChild
-          >
-            <NativePlatformPressable style={styles.headerButton} unstyled>
-              <Icon name="calendar" style={styles.headerSecondaryText} />
-              <Text style={styles.headerSecondaryText}>
-                {`${paycycleStats?.startDate.toLocaleString()} - ${paycycleStats?.endDate.toLocaleString()}`}
-              </Text>
-            </NativePlatformPressable>
-          </Link>
+          <Button style={styles.headerButton} onPress={router.back}>
+            <Icon name="calendar" style={styles.headerSecondaryText} />
+            <Text style={styles.headerSecondaryText}>
+              {`${Temporal.PlainDate.from(paycycleStats.startDate).toLocaleString(undefined, { month: "short", day: "numeric" })} - ${Temporal.PlainDate.from(paycycleStats.endDate).toLocaleString(undefined, { month: "short", day: "numeric" })}`}
+            </Text>
+          </Button>
         </View>
         <View style={styles.vertical}>
           <Text style={styles.headerText}>
             {"Week 1: "}
-            <Text style={styles.bold}>{totalWeekOneHours.concat("H")}</Text>
+            <Text style={styles.bold}>{`${totalWeekOneHours}H`}</Text>
           </Text>
           <Text style={styles.headerText}>
             {"Week 2: "}
-            <Text style={styles.bold}>{totalWeekTwoHours.concat("H")}</Text>
+            <Text style={styles.bold}>{`${totalWeekTwoHours}H`}</Text>
           </Text>
         </View>
         <View style={styles.vertical}>
@@ -134,107 +126,72 @@ const PaycycleScreen = () => {
     isEdited = true,
   ) => {
     if (ongoingShift) {
-      mutation.mutate({
-        id: ongoingShift.id,
-        startTime: ongoingShift.startTime,
+      updateShiftMutation.mutate({
+        ...ongoingShift,
         isEdited,
-        paycycleId,
         endTime: instant.toString(),
       });
       setOngoingShift(undefined);
     } else {
-      mutation.mutate({
+      createShiftMutation.mutate({
         paycycleId,
         startTime: instant.toString(),
         isEdited,
+        breakDurationMinutes: paycycleStats.breakDurationMinutes,
       });
     }
   };
 
-  useEffect(() => {
-    setOngoingShift(shiftsQuery?.find(filterOngoingShift));
-  }, [shiftsQuery]);
-
-  if (!shiftsQuery) {
-    return <Text>Loading...</Text>;
-  }
-
   return (
-    <>
+    <Suspense fallback={<Loading />}>
       <Stack.Screen
         options={{
           title: name,
-          headerRight: (props) => (
-            <Link
-              href={{
-                pathname: "/[jobId]/edit",
-                params: {
-                  jobId,
-                  name,
-                  description,
-                  overtimeBoundaryMins: overtimeThresholdMinutes,
-                  overtimePeriod: overtimePeriodDays,
-                  breakDurationMins: breakDurationMinutes,
-                  paycycleDays,
-                  minShiftDurationMins: minShiftDurationMinutes,
-                },
-              }}
-              asChild
-            >
-              <NativePlatformPressable
-                unstyled
-                borderless
-                hitSlop={10}
-                {...props}
-              >
-                <Icon name="edit" color={props.tintColor} />
-              </NativePlatformPressable>
-            </Link>
-          ),
-          headerLeft: (props) => (
-            <NativePlatformPressable
-              borderless
-              onPress={() => router.navigate("/")}
-              hitSlop={20}
-            >
-              <Icon name="arrow-left" color={props.tintColor} />
-            </NativePlatformPressable>
-          ),
         }}
       />
-      {renderHeader()}
-      <View style={styles.flatlistContainer}>
-        <FlatList
-          data={shiftsQuery.filter((shift) => !!shift.endTime)}
-          renderItem={({ item }) => (
-            <Shift
-              shift={item}
-              minShiftDurationMins={minShiftDurationMinutes}
-              breakDurationMins={breakDurationMinutes}
-              ongoing={false}
-              jobId={jobId}
-            />
-          )}
-          ItemSeparatorComponent={Separator}
-          ListEmptyComponent={() =>
-            !ongoingShift && <Text style={styles.emptyText}>No shifts yet</Text>
-          }
-          ListHeaderComponentStyle={styles.header}
-        />
-      </View>
-      <DatePicker
+      <FlatList
+        data={shifts.filter(filterCompleteShift)}
+        renderItem={({ item }) => (
+          <Shift
+            shift={item}
+            minShiftDurationMins={minShiftDurationMinutes}
+            breakDurationMins={breakDurationMinutes}
+            ongoing={false}
+            jobId={jobId}
+          />
+        )}
+        ItemSeparatorComponent={Separator}
+        ListEmptyComponent={() =>
+          !ongoingShift && <Text style={styles.emptyText}>No shifts yet</Text>
+        }
+        ListHeaderComponent={renderHeader}
+        style={styles.flatlist}
+      />
+      <DateTimePicker
         open={dateModalOpen}
         title={"Select Date"}
         minimumDate={
-          paycycleStats?.startDate
-            ? Temporal.PlainDateTime.from(paycycleStats.startDate)
-            : undefined
+          ongoingShift
+            ? Temporal.Instant.from(ongoingShift.startTime)
+                .toZonedDateTimeISO(paycycleStats.timezone)
+                .toPlainDateTime()
+            : Temporal.PlainDateTime.from(paycycleStats.startDate)
         }
-        maximumDate={Temporal.Now.plainDateTimeISO()}
-        mode="datetime"
+        maximumDate={
+          ongoingShift
+            ? Temporal.Instant.from(ongoingShift.startTime)
+                .toZonedDateTimeISO(paycycleStats.timezone)
+                .toPlainDateTime()
+                .add({ hours: 36 })
+            : Temporal.PlainDate.from(paycycleStats.endDate)
+                .toPlainDateTime()
+                .with({ hour: 23, minute: 59 })
+        }
         date={Temporal.Now.plainDateTimeISO()}
         onConfirm={(date) => {
-          handlePressScheduled(Temporal.Instant.from(date.toString()));
+          handlePressScheduled(
+            date.toZonedDateTime(paycycleStats.timezone).toInstant(),
+          );
           setDateModalOpen(false);
         }}
         onCancel={() => {
@@ -252,58 +209,93 @@ const PaycycleScreen = () => {
           />
         )}
         <View style={styles.buttonContainer}>
-          <NativePlatformPressable
+          <Button
             style={[
               styles.button,
               ongoingShift ? styles.endButton : styles.startButton,
             ]}
             onPress={() => setDateModalOpen(true)}
           >
-            <Icon name="clock" style={styles.icon} />
-            <Text style={styles.buttonText}>
+            <Icon
+              name="clock"
+              style={[
+                styles.icon,
+                ongoingShift ? styles.endButtonText : styles.startButtonText,
+              ]}
+            />
+            <Text
+              style={[
+                styles.buttonText,
+                ongoingShift ? styles.endButtonText : styles.startButtonText,
+              ]}
+            >
               {ongoingShift ? "End At..." : "Start At..."}
             </Text>
-          </NativePlatformPressable>
-          <NativePlatformPressable
-            style={[
-              styles.button,
-              ongoingShift ? styles.endButton : styles.startButton,
-            ]}
-            onPress={handlePressImmediate}
-          >
-            <Icon name="clock" style={styles.icon} />
-            <Text style={styles.buttonText}>
-              {ongoingShift ? "End" : "Start"}
-            </Text>
-          </NativePlatformPressable>
+          </Button>
+          {Temporal.PlainDate.compare(
+            paycycleStats.endDate,
+            Temporal.Now.plainDateISO(),
+          ) > 0 && (
+            <Button
+              style={[
+                styles.button,
+                ongoingShift ? styles.endButton : styles.startButton,
+              ]}
+              onPress={handlePressImmediate}
+            >
+              <Icon
+                name="clock"
+                style={[
+                  styles.icon,
+                  ongoingShift ? styles.endButtonText : styles.startButtonText,
+                ]}
+              />
+              <Text
+                style={[
+                  styles.buttonText,
+                  ongoingShift ? styles.endButtonText : styles.startButtonText,
+                ]}
+              >
+                {ongoingShift ? "End" : "Start"}
+              </Text>
+            </Button>
+          )}
         </View>
       </View>
-    </>
+    </Suspense>
   );
 };
 
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create((theme, rt) => ({
   button: {
+    flex: 1,
     flexDirection: "row",
-    gap: theme.spacing[2],
-    borderWidth: theme.borderWidths.none,
+    gap: theme.spacing[1],
     paddingVertical: theme.spacing[4],
+    borderRadius: theme.radii.xl,
+    justifyContent: "center",
+    alignItems: "center",
+    maxWidth: theme.sizes[56],
   },
   startButton: {
-    backgroundColor: theme.colors.success,
+    borderColor: theme.colors.green7,
+    borderWidth: theme.borderWidths.thin,
+    backgroundColor: theme.colors.green5,
   },
   endButton: {
-    backgroundColor: theme.colors.error,
+    borderColor: theme.colors.red7,
+    borderWidth: theme.borderWidths.thin,
+    backgroundColor: theme.colors.red5,
   },
   buttonText: {
     fontWeight: "bold",
     fontSize: theme.sizes[5],
-    color: theme.colors.textDark,
+    color: theme.button.base.color,
   },
   buttonContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
     gap: theme.spacing[5],
     paddingVertical: theme.spacing[3],
     paddingHorizontal: theme.spacing[5],
@@ -338,26 +330,29 @@ const styles = StyleSheet.create((theme) => ({
   },
   headerButton: {
     flex: 1,
-    flexDirection: "row",
     paddingHorizontal: theme.spacing[3],
     alignItems: "center",
     height: "100%",
     gap: theme.spacing[2],
+    backgroundColor: theme.colors.transparent,
   },
-  flatlistContainer: {
-    flex: 1,
-    borderBottomWidth: theme.borderWidths.thin,
-    borderColor: theme.colors.background,
-  },
+  flatlist: {},
   vertical: {
     justifyContent: "center",
     alignItems: "flex-end",
   },
   bottomContainer: {
     backgroundColor: theme.colors.slate2,
+    paddingBlockEnd: rt.insets.bottom,
   },
   icon: {
-    color: theme.colors.textDark,
+    color: theme.button.base.color,
+  },
+  endButtonText: {
+    color: theme.colors.red11,
+  },
+  startButtonText: {
+    color: theme.colors.green11,
   },
 }));
 

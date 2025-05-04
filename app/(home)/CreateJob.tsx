@@ -1,10 +1,10 @@
-import { Stack, router } from "expo-router";
+import { router } from "expo-router";
 import type { FormFields } from "@/components/JobForm";
 import JobForm from "@/components/JobForm";
-import { useData } from "@/db/DataContext";
+import { useJobMutation } from "@/hooks/useJobMutation";
 
 const CreateJob = () => {
-  const { createJob, createPaycycle } = useData();
+  const { createJobMutation } = useJobMutation();
 
   const submitForm = async ({
     overtimeHours,
@@ -17,40 +17,26 @@ const CreateJob = () => {
     paycyclePeriod,
     minShiftDurationMinutes,
   }: FormFields) => {
-    try {
-      const overtimeBoundaryMins = overtimeHours * 60 + overtimeMins;
-      const createdJob = await createJob({
+    const overtimeBoundaryMins = overtimeHours * 60 + overtimeMins;
+    const timezone = Temporal.Now.timeZoneId();
+    createJobMutation.mutate({
+      jobData: {
         name,
         overtimeThresholdMinutes: overtimeBoundaryMins,
         overtimePeriodDays: overtimeCycle,
-        breakDurationMins: breakDuration,
+        breakDurationMinutes: breakDuration,
         paycycleDays: paycyclePeriod,
         description,
         minShiftDurationMinutes,
-      });
-      if (!createdJob) {
-        console.error("Job failed to create!");
-        return router.back();
-      }
-      await createPaycycle({
-        jobId: createdJob.id,
-        startDate: startDate.toString(),
-        endDate: startDate.add({ days: createdJob.paycycleDays }).toString(),
-      });
-
-      router.back();
-    } catch (err: unknown) {
-      console.error("Insertion Error:", err);
-    }
+        timezone,
+      },
+      startDate,
+    });
+    router.dismissTo("/");
   };
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          title: "New Job",
-        }}
-      />
       <JobForm onSubmit={(formData) => submitForm(formData)} />
     </>
   );

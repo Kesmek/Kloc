@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/expo-sqlite";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, isNull } from "drizzle-orm";
 import { useSQLiteContext } from "expo-sqlite";
 import {
   type PropsWithChildren,
@@ -25,20 +25,22 @@ import {
 } from "./schema";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 import migrations from "./migrations/migrations";
-
-if (
-  !process.env.EXPO_PUBLIC_TURSO_DB_URL ||
-  !process.env.EXPO_PUBLIC_TURSO_DB_AUTH_TOKEN
-) {
-  throw new Error("Turso DB URL and Auth Token must be set in .env.local");
-}
+import Constants from "expo-constants";
 
 export const DATABASE_NAME = "shiftly.db";
-
+//
+// In your db/DataContext.ts or wherever tursoOptions is defined
 export const tursoOptions = {
-  url: process.env.EXPO_PUBLIC_TURSO_DB_URL,
-  authToken: process.env.EXPO_PUBLIC_TURSO_DB_AUTH_TOKEN,
+  url: Constants.expoConfig?.extra?.tursoUrl as string,
+  authToken: Constants.expoConfig?.extra?.tursoAuthToken as string,
 };
+
+// Add checks to ensure they exist if needed
+if (!tursoOptions.url || !tursoOptions.authToken) {
+  throw new Error(
+    "Turso configuration is missing in Constants.expoConfig.extra!",
+  );
+}
 
 interface DataContextType {
   createShift: (
@@ -49,12 +51,12 @@ interface DataContextType {
     id: number,
     updatedShiftData: Partial<Omit<Shift, "id">>,
   ) => Promise<Shift | undefined>;
-  deleteShift: (id: number) => Promise<void>;
+  deleteShift: (id: number) => Promise<Shift | undefined>;
   createPaycycle: (
     // id is auto generated and can be omitted
     newPaycycleData: Omit<NewPaycycle, "id">,
   ) => Promise<Paycycle | undefined>;
-  deletePaycycle: (id: number) => Promise<void>;
+  deletePaycycle: (id: number) => Promise<Paycycle | undefined>;
   jobs: Job[];
   createJob: (
     // id is auto generated and can be omitted
@@ -64,7 +66,7 @@ interface DataContextType {
     id: number,
     updatedJobData: Partial<Omit<Job, "id">>,
   ) => Promise<Job | undefined>;
-  deleteJob: (id: number) => Promise<void>;
+  deleteJob: (id: number) => Promise<Job | undefined>;
   fetchJobs: () => Promise<Job[]>;
   fetchShifts: (paycycleId: number) => Promise<Shift[]>;
   fetchPaycycles: (jobId: number) => Promise<Paycycle[]>;
@@ -75,10 +77,13 @@ interface DataContextType {
   isMigrating: boolean;
   migrationError: Error | undefined;
   isSyncing: boolean;
+  syncData: () => void;
   toggleSync: (enabled: boolean) => void;
   findLastShiftContext: () => Promise<
     { jobId: number; paycycleId: number } | undefined
   >;
+  getShiftById: (id: number) => Promise<Shift | undefined>;
+  getJobById: (id: number) => Promise<Job | undefined>;
 }
 
 export const DataContext = createContext<DataContextType | null>(null);
@@ -131,6 +136,7 @@ PRAGMA foreign_keys = ON;
         // Use Drizzle's select syntax
         result = await drizzleDb.query.paycycle.findMany({
           where: eq(paycycle.jobId, jobId),
+          orderBy: desc(paycycle.startDate),
         });
       } catch (e) {
         console.error("Failed to fetch jobs:", e);
@@ -158,6 +164,7 @@ PRAGMA foreign_keys = ON;
             paycycleId: paycycle.id,
             startDate: paycycle.startDate,
             endDate: paycycle.endDate,
+            timezone: job.timezone,
           })
           .from(paycycle)
           .innerJoin(job, eq(paycycle.jobId, job.id))
@@ -166,7 +173,7 @@ PRAGMA foreign_keys = ON;
 
         return result[0];
       } catch (e) {
-        console.error("Failed to fetch paycycle:", e);
+        console.error("Failed to fetch paycycle stats:", e);
       }
     },
     [drizzleDb],
@@ -190,17 +197,21 @@ PRAGMA foreign_keys = ON;
 
   // Initial fetch effect
   useEffect(() => {
-    setIsMigrating(true);
-    if (error) {
-      setMigrationError(error);
-    }
+    //setIsMigrating(true); // Let's rely on success/error states primarily
 
-    if (success) {
-      setIsMigrating(false);
-      console.log("Migrations complete.");
-      fetchJobs();
+    if (error) {
+      console.error("Migration Hook Error:", error); // Log the specific error
+      setMigrationError(error);
+      setIsMigrating(false); // Hook finished (with error)
+    } else if (success) {
+      setIsMigrating(false); // Hook finished (successfully)
+      setMigrationError(undefined);
+      console.log("Migration Hook Success.");
+    } else {
+      // Neither success nor error yet - migration in progress or not started
+      setIsMigrating(true);
     }
-  }, [fetchJobs, success, error]);
+  }, [success, error]);
 
   // Cleanup effect for interval
   useEffect(() => {
@@ -218,17 +229,14 @@ PRAGMA foreign_keys = ON;
       // 3. Use the ORIGINAL expoDb instance for syncLibSQL
       await expoDb.syncLibSQL();
       console.log("Synced data with Turso DB. Refetching...");
-      // 4. Refetch data using Drizzle-based fetch functions
-      await fetchJobs();
     } catch (e) {
       console.error("Sync failed:", e);
     }
-  }, [expoDb, fetchJobs]); // Include all fetch functions
+  }, [expoDb]); // Include all fetch functions
 
   // Toggle sync remains the same, using syncData
   const toggleSync = useCallback(
     async (enabled: boolean) => {
-      // ... (implementation is the same, calls syncData) ...
       setIsSyncing(enabled);
       if (enabled) {
         console.log("Starting sync interval...");
@@ -335,7 +343,9 @@ PRAGMA foreign_keys = ON;
 
   const deleteShift = async (id: number) => {
     try {
-      await drizzleDb.delete(shift).where(eq(shift.id, id));
+      return (
+        await drizzleDb.delete(shift).where(eq(shift.id, id)).returning()
+      )[0];
     } catch (e) {
       console.error("Failed to delete shift:", e);
     }
@@ -343,7 +353,7 @@ PRAGMA foreign_keys = ON;
 
   const deleteJob = async (id: number) => {
     try {
-      await drizzleDb.delete(job).where(eq(job.id, id));
+      return (await drizzleDb.delete(job).where(eq(job.id, id)).returning())[0];
     } catch (e) {
       console.error("Failed to delete job:", e);
     }
@@ -351,7 +361,9 @@ PRAGMA foreign_keys = ON;
 
   const deletePaycycle = async (id: number) => {
     try {
-      await drizzleDb.delete(paycycle).where(eq(paycycle.id, id));
+      return (
+        await drizzleDb.delete(paycycle).where(eq(paycycle.id, id)).returning()
+      )[0];
     } catch (e) {
       console.error("Failed to delete job:", e);
     }
@@ -365,10 +377,23 @@ PRAGMA foreign_keys = ON;
       })
       .from(shift)
       .innerJoin(paycycle, eq(shift.paycycleId, paycycle.id))
+      .where(isNull(shift.endTime))
       .orderBy(desc(shift.startTime))
       .limit(1);
 
     return lastShiftInfo[0]; // Returns { jobId, paycycleId } or undefined
+  };
+
+  const getShiftById = async (id: number) => {
+    return await drizzleDb.query.shift.findFirst({
+      where: eq(shift.id, id),
+    });
+  };
+
+  const getJobById = async (id: number) => {
+    return await drizzleDb.query.job.findFirst({
+      where: eq(job.id, id),
+    });
   };
 
   return (
@@ -379,6 +404,7 @@ PRAGMA foreign_keys = ON;
         isMigrating,
         isSyncing,
         toggleSync,
+        syncData,
         createShift,
         createJob,
         createPaycycle,
@@ -392,6 +418,8 @@ PRAGMA foreign_keys = ON;
         fetchPaycycles,
         fetchPaycycleStatsById,
         fetchShifts,
+        getShiftById,
+        getJobById,
       }}
     >
       {children}

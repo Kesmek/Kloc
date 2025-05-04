@@ -29,6 +29,21 @@
       "when": 1744991145490,
       "tag": "0003_lean_steel_serpent",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1745266332137,
+      "tag": "0005_bouncy_jackpot",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1745281339960,
+      "tag": "0007_next_fat_cobra",
+      "breakpoints": true
     }
   ]
 }
+

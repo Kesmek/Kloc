@@ -6,6 +6,7 @@ module.exports = (api) => {
     plugins: [
       ["inline-import", { extensions: [".sql"] }], // <-- add this
       ["react-native-unistyles/plugin"],
+      "react-native-reanimated/plugin",
     ],
   };
 };

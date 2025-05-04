@@ -1,4 +1,4 @@
-import { StyleSheet, UnistylesRegistry } from "react-native-unistyles";
+import { StyleSheet } from "react-native-unistyles";
 import {
   slate,
   slateDark,
@@ -109,6 +109,17 @@ export const lightTheme = {
     border: slate.slate7,
     success: green.green9,
   },
+  button: {
+    base: {
+      color: slate.slate1,
+    },
+    success: {
+      backgroundColor: green.green8,
+    },
+    error: {
+      backgroundColor: red.red8,
+    },
+  },
   spacing,
   radii,
   sizes,
@@ -144,6 +155,17 @@ export const darkTheme = {
     success: greenDark.green9,
     transparent: "#00000000",
     border: slateDark.slate7,
+  },
+  button: {
+    base: {
+      color: slateDark.slate1,
+    },
+    success: {
+      backgroundColor: greenDark.green8,
+    },
+    error: {
+      backgroundColor: redDark.red8,
+    },
   },
   spacing,
   radii,

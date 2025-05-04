@@ -1,22 +1,16 @@
 import TextInput from "@/components/TextInput";
 import type { TextInput as RNTextInput } from "react-native-gesture-handler";
 import { StyleSheet } from "react-native-unistyles";
-import { ScrollView } from "react-native-gesture-handler";
 import { View, Text } from "react-native";
 import { useMemo, useRef, useState } from "react";
 import Toggle from "@/components/Toggle";
-import NativePlatformPressable from "@/components/NativePlatformPressable";
 import Icon from "@/components/Icon";
 import Section from "@/components/Section";
 import { isInteger, toNumber } from "@/utils/helpers";
 import { OTCycle, Paycycle } from "@/utils/typescript";
-import Animated, {
-  useAnimatedKeyboard,
-  useAnimatedStyle,
-} from "react-native-reanimated";
 import DatePicker from "./DatePicker";
-
-const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
+import Button from "./Button";
 
 export interface FormFields {
   name: string;
@@ -58,12 +52,6 @@ const JobForm = ({
   submitButtonText = "Confirm",
   extraButton,
 }: JobFormProps) => {
-  const keyboard = useAnimatedKeyboard();
-
-  const animatedStyles = useAnimatedStyle(() => ({
-    marginBottom: keyboard.height.value,
-  }));
-
   const [name, setName] = useState(initialValues.name);
   const [breakDuration, setBreakDuration] = useState(
     initialValues.breakDuration.toString(),
@@ -88,7 +76,7 @@ const JobForm = ({
     initialValues.minShiftDurationMinutes.toString(),
   );
 
-  const validName = useMemo(() => /\w*/.test(name), [name]);
+  const validName = useMemo(() => /\w+/.test(name), [name]);
   const validBreak = useMemo(() => isInteger(breakDuration), [breakDuration]);
   const validOTCycle = useMemo(() => {
     if (overtimeCycle === OTCycle.Day) {
@@ -125,7 +113,14 @@ const JobForm = ({
   const shiftLenghtRef = useRef<RNTextInput>(null);
 
   const submitForm = async () => {
-    if (onSubmit) {
+    if (
+      validName &&
+      validMinShiftLength &&
+      validOTMins &&
+      validOTHours &&
+      validOTCycle &&
+      validBreak
+    ) {
       await onSubmit({
         name,
         startDate: date,
@@ -138,13 +133,11 @@ const JobForm = ({
         minShiftDurationMinutes: toNumber(minShiftLengthMins),
       });
     }
+    !validName && nameRef.current?.focus();
   };
 
   return (
-    <AnimatedScrollView
-      contentContainerStyle={[styles.container]}
-      style={animatedStyles}
-    >
+    <KeyboardAwareScrollView contentContainerStyle={[styles.container]}>
       <Section title="Name">
         <TextInput
           ref={nameRef}
@@ -235,35 +228,44 @@ const JobForm = ({
       </Section>
       {disabledFields.includes("startDate") || (
         <Section title="Paycycle Start Date">
-          <NativePlatformPressable
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 8,
-              alignSelf: "flex-start",
-            }}
-            onPress={() => setDateModalOpen(true)}
-          >
-            <Icon name="calendar" />
-            <Text style={styles.dateText}>{date.toLocaleString()}</Text>
-          </NativePlatformPressable>
-          <DatePicker
-            open={dateModalOpen}
-            title={"Paycycle Start Date"}
-            minimumDate={Temporal.PlainDateTime.from(date).subtract({
-              months: 1,
-            })}
-            maximumDate={Temporal.PlainDateTime.from(date).add({ months: 1 })}
-            mode="date"
-            date={Temporal.PlainDateTime.from(date)}
-            onConfirm={(date) => {
-              setDateModalOpen(false);
-              setDate(date);
-            }}
-            onCancel={() => {
-              setDateModalOpen(false);
-            }}
-          />
+          <Text style={styles.supportingText}>
+            Select the current or previous paycycle start date
+          </Text>
+          <View style={[styles.horizontal, styles.dateContainer]}>
+            <Button
+              style={styles.dateButton}
+              onPress={() => setDateModalOpen(true)}
+            >
+              <Icon name="calendar" />
+              <Text style={styles.dateText}>{date.toLocaleString()}</Text>
+            </Button>
+            <DatePicker
+              open={dateModalOpen}
+              title={"Paycycle Start Date"}
+              minimumDate={Temporal.PlainDate.from(date).subtract({
+                months: 1,
+              })}
+              maximumDate={Temporal.PlainDate.from(date)}
+              date={Temporal.PlainDate.from(date)}
+              onConfirm={(date) => {
+                setDateModalOpen(false);
+                setDate(date);
+              }}
+              onCancel={() => {
+                setDateModalOpen(false);
+              }}
+            />
+            <Icon name="arrow-right" style={styles.disabled} />
+            <Button
+              style={[styles.dateButton, styles.disabled]}
+              enabled={false}
+            >
+              <Icon name="calendar" style={styles.disabled} />
+              <Text style={[styles.dateText, styles.disabled]}>
+                {date.add({ days: paycyclePeriod - 1 }).toLocaleString()}
+              </Text>
+            </Button>
+          </View>
           <Text style={styles.supportingText}>Pay Cycle</Text>
           <Toggle
             firstValue={Paycycle.Biweekly}
@@ -286,15 +288,15 @@ const JobForm = ({
       </Section>
       <View style={styles.buttonContainer}>
         {extraButton && (
-          <NativePlatformPressable
+          <Button
             style={[styles.button, styles.delete]}
             onPress={extraButton.onPress}
           >
             <Icon name="trash-2" />
             <Text style={styles.buttonText}>{extraButton.text}</Text>
-          </NativePlatformPressable>
+          </Button>
         )}
-        <NativePlatformPressable
+        <Button
           style={[
             styles.button,
             !extraButton && {
@@ -305,13 +307,13 @@ const JobForm = ({
         >
           <Icon name="check" />
           <Text style={styles.buttonText}>{submitButtonText}</Text>
-        </NativePlatformPressable>
+        </Button>
       </View>
-    </AnimatedScrollView>
+    </KeyboardAwareScrollView>
   );
 };
 
-export const styles = StyleSheet.create((theme) => ({
+export const styles = StyleSheet.create((theme, rt) => ({
   horizontal: {
     flexDirection: "row",
     gap: theme.spacing[1],
@@ -323,17 +325,18 @@ export const styles = StyleSheet.create((theme) => ({
     textAlign: "center",
   },
   supportingText: {
-    color: theme.colors.slate8,
+    color: theme.colors.slate10,
     fontSize: theme.sizes[4],
   },
   importantText: {
-    color: theme.colors.slate8,
+    color: theme.colors.slate11,
     fontSize: theme.sizes[4],
     fontWeight: "bold",
   },
   container: {
     paddingHorizontal: theme.spacing[4],
-    paddingVertical: theme.spacing[2],
+    paddingBlockStart: theme.spacing[3],
+    paddingBlockEnd: theme.spacing[3] + rt.navigationBar.height,
     gap: theme.spacing[2],
   },
   buttonText: {
@@ -342,6 +345,7 @@ export const styles = StyleSheet.create((theme) => ({
     fontSize: theme.sizes[5],
   },
   button: {
+    flex: 1,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
@@ -370,6 +374,22 @@ export const styles = StyleSheet.create((theme) => ({
     marginTop: theme.spacing[2],
     alignItems: "center",
     justifyContent: "center",
+  },
+  dateButton: {
+    gap: theme.spacing[2],
+    backgroundColor: theme.colors.transparent,
+    borderWidth: theme.borderWidths.thin,
+    borderColor: theme.colors.slate7,
+    borderRadius: theme.radii["2xl"],
+    paddingVertical: theme.spacing[2],
+    paddingHorizontal: theme.spacing[4],
+  },
+  dateContainer: {
+    gap: theme.spacing[2],
+  },
+  disabled: {
+    color: theme.colors.textSecondary,
+    borderColor: theme.colors.slate6,
   },
 }));
 

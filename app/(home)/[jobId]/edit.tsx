@@ -1,37 +1,33 @@
-import Icon from "@/components/Icon";
 import type { FormFields } from "@/components/JobForm";
 import JobForm from "@/components/JobForm";
-import NativePlatformPressable from "@/components/NativePlatformPressable";
+import Loading from "@/components/Loading";
 import { useData } from "@/db/DataContext";
-import type { Job } from "@/db/schema";
+import { useJobMutation } from "@/hooks/useJobMutation";
 import { toNumber } from "@/utils/helpers";
-import { OTCycle, Paycycle, type Stringified } from "@/utils/typescript";
-import { Stack, router, useLocalSearchParams } from "expo-router";
+import { OTCycle, Paycycle } from "@/utils/typescript";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { router, useLocalSearchParams } from "expo-router";
+import { Suspense } from "react";
 import { Alert } from "react-native";
 
 const EditJob = () => {
-  const { updateJob, deleteJob } = useData();
+  const { getJobById } = useData();
+  const { updateJobMutation, deleteJobMutation } = useJobMutation();
 
-  const {
-    jobId,
-    name: jobName,
-    description: jobDescription,
-    overtimeThresholdMinutes,
-    overtimePeriodDays,
-    breakDurationMins,
-    paycycleDays,
-    minShiftDurationMinutes,
-  } = useLocalSearchParams<
-    Stringified<Job> & {
-      jobId: string;
-    }
-  >();
+  const { jobId: jid } = useLocalSearchParams<"/[jobId]">();
+  const jobId = toNumber(jid);
+
+  const { data: jobQuery } = useSuspenseQuery({
+    queryKey: ["job", jobId],
+    queryFn: () => getJobById(jobId),
+  });
+
+  const job = jobQuery!;
+
   const overtimeCycle =
-    toNumber(overtimePeriodDays) === OTCycle.Week ? OTCycle.Week : OTCycle.Day;
+    job.overtimePeriodDays === OTCycle.Week ? OTCycle.Week : OTCycle.Day;
   const paycyclePeriod =
-    toNumber(paycycleDays) === Paycycle.Weekly
-      ? Paycycle.Weekly
-      : Paycycle.Biweekly;
+    job.paycycleDays === Paycycle.Weekly ? Paycycle.Weekly : Paycycle.Biweekly;
 
   const submitForm = async ({
     name,
@@ -42,20 +38,19 @@ const EditJob = () => {
     breakDuration,
     minShiftDurationMinutes,
   }: FormFields) => {
-    try {
-      const overtimeThresholdMinutes = overtimeHours * 60 + overtimeMins;
-      await updateJob(toNumber(jobId), {
-        name,
-        description,
-        overtimeThresholdMinutes,
-        overtimePeriodDays: overtimeCycle,
-        breakDurationMins: breakDuration,
-        minShiftDurationMinutes,
-      });
-      router.navigate("/");
-    } catch (err: unknown) {
-      console.error("Update Error:", err);
-    }
+    const overtimeThresholdMinutes = overtimeHours * 60 + overtimeMins;
+    updateJobMutation.mutate({
+      id: jobId,
+      name,
+      description,
+      overtimeThresholdMinutes,
+      overtimePeriodDays: overtimeCycle,
+      breakDurationMinutes: breakDuration,
+      minShiftDurationMinutes,
+      paycycleDays: job.paycycleDays,
+      timezone: job.timezone,
+    });
+    router.dismissTo("/");
   };
 
   const deleteCurrentJob = () => {
@@ -66,9 +61,9 @@ const EditJob = () => {
         {
           text: "OK",
           style: "default",
-          onPress: async () => {
-            await deleteJob(toNumber(jobId));
-            router.navigate("/");
+          onPress: () => {
+            deleteJobMutation.mutate(jobId);
+            router.dismissTo("/");
           },
         },
         {
@@ -81,36 +76,17 @@ const EditJob = () => {
   };
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: "Edit Job",
-          headerLeft: (props) => {
-            return (
-              props.canGoBack && (
-                <NativePlatformPressable
-                  unstyled
-                  borderless
-                  onPress={() => router.back()}
-                  hitSlop={20}
-                >
-                  <Icon name="arrow-left" />
-                </NativePlatformPressable>
-              )
-            );
-          },
-        }}
-      />
+    <Suspense fallback={<Loading />}>
       <JobForm
         initialValues={{
-          name: jobName ?? "",
-          description: jobDescription ?? "",
+          name: job.name,
+          description: job.description ?? "",
           startDate: Temporal.Now.plainDateISO(),
-          minShiftDurationMinutes: toNumber(minShiftDurationMinutes),
-          overtimeMins: toNumber(overtimeThresholdMinutes) % 60,
-          overtimeHours: Math.floor(toNumber(overtimeThresholdMinutes) / 60),
+          minShiftDurationMinutes: job.minShiftDurationMinutes,
+          overtimeMins: job.overtimeThresholdMinutes % 60,
+          overtimeHours: Math.floor(job.overtimeThresholdMinutes / 60),
           overtimeCycle,
-          breakDuration: toNumber(breakDurationMins),
+          breakDuration: job.breakDurationMinutes,
           paycyclePeriod,
         }}
         onSubmit={(formData) => submitForm(formData)}
@@ -121,7 +97,7 @@ const EditJob = () => {
         }}
         submitButtonText="Update"
       />
-    </>
+    </Suspense>
   );
 };
 

@@ -1,174 +1,207 @@
-import DatePicker from "@/components/DatePicker";
+import Button from "@/components/Button";
 import Icon from "@/components/Icon";
-import NativePlatformPressable from "@/components/NativePlatformPressable";
+import Loading from "@/components/Loading";
 import Section from "@/components/Section";
-import CustomTextInput from "@/components/TextInput";
-import { type Shift, shift } from "@/db/schema";
+import TextInput from "@/components/TextInput";
+import TimePicker from "@/components/TimePicker";
+import { useData } from "@/db/DataContext";
 import useActiveDuration from "@/hooks/useActiveDuration";
-import usePreventBack from "@/hooks/usePreventBack";
+import { useShiftMutation } from "@/hooks/useShiftMutation";
 import { clampDuration, toNumber } from "@/utils/helpers";
-import { stringToTime } from "@/utils/shiftFunctions";
-import type { Stringified } from "@/utils/typescript";
-import { eq } from "drizzle-orm";
-import { Stack, useLocalSearchParams } from "expo-router";
-import { useMemo, useState } from "react";
+import { longFormDuration } from "@/utils/shiftFunctions";
+import { useSuspenseQueries } from "@tanstack/react-query";
+import { router, useLocalSearchParams } from "expo-router";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { View, Text } from "react-native";
-import Animated, {
-  useAnimatedKeyboard,
-  useAnimatedStyle,
-} from "react-native-reanimated";
+import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { StyleSheet } from "react-native-unistyles";
 
 const ShiftScreen = () => {
   const {
-    shiftId,
-    startTime: start_time,
-    endTime: end_time,
-    notes: shiftNotes,
-    minShiftDurationMins,
-    breakDurationMins,
-    isEdited,
-  } = useLocalSearchParams<
-    Stringified<Shift> & {
-      shiftId: string;
-      startTime: string;
-      endTime: string;
-      notes: string;
-      minShiftDurationMins: string;
-      breakDurationMins: string;
-    }
-  >();
-  const breakDuration = useMemo(
-    () => Temporal.Duration.from({ minutes: toNumber(breakDurationMins) }),
-    [breakDurationMins],
-  );
-  const minShiftDuration = useMemo(
-    () =>
-      Temporal.Duration.from({
-        hours: toNumber(minShiftDurationMins) / 60,
-      }),
-    [minShiftDurationMins],
-  );
-  const { setPreventBack, forceBack } = usePreventBack();
+    shiftId: sid,
+    paycycleId: pid,
+    jobId: jid,
+  } = useLocalSearchParams<"/[jobId]/[paycycleId]/[shiftId]">();
+  const shiftId = toNumber(sid);
+  const paycycleId = toNumber(pid);
+  const jobId = toNumber(jid);
+
+  const { getShiftById, getJobById } = useData();
+  const { updateShiftMutation, deleteShiftMutation } = useShiftMutation();
+
+  const [shiftQuery, jobQuery] = useSuspenseQueries({
+    queries: [
+      {
+        queryKey: ["shift", shiftId],
+        queryFn: () => getShiftById(shiftId),
+      },
+      {
+        queryKey: ["job", jobId],
+        queryFn: () => getJobById(jobId),
+      },
+    ],
+  });
+
+  const shift = shiftQuery.data!;
+  const job = jobQuery.data!;
 
   const [startTime, setStartTime] = useState(
-    Temporal.PlainDateTime.from(start_time),
+    shift?.startTime
+      ? Temporal.Instant.from(shift.startTime)
+      : Temporal.Now.instant(),
   );
   const [endTime, setEndTime] = useState(
-    end_time ? Temporal.PlainDateTime.from(end_time) : null,
+    shift?.endTime ? Temporal.Instant.from(shift.endTime) : null,
   );
-  const { duration } = useActiveDuration(startTime, endTime);
-  const adjustedDuration = useMemo(
-    () => duration.subtract(breakDuration),
-    [breakDuration, duration],
+  const [breakDurationMinutes, setBreakDurationMinutes] = useState(
+    shift?.breakDurationMinutes ?? 0,
   );
-
-  const [notes, setNotes] = useState(shiftNotes ?? "");
+  const [notes, setNotes] = useState(shift?.notes ?? "");
   const [startTimeModalOpen, setStartTimeModalOpen] = useState(false);
   const [endTimeModalOpen, setEndTimeModalOpen] = useState(false);
-  const [edited, setEdited] = useState(isEdited === "true");
 
-  const keyboard = useAnimatedKeyboard({ isStatusBarTranslucentAndroid: true });
+  const [validBreak, setValidBreak] = useState(true);
 
-  const animatedStyles = useAnimatedStyle(() => ({
-    marginBottom: keyboard.height.value,
-  }));
+  const { duration } = useActiveDuration(startTime, endTime);
 
-  const onChangeStartTime = (newStart: Temporal.PlainDateTime) => {
+  useEffect(() => {
+    if (shift) {
+      setNotes(shift.notes ?? "");
+      setStartTime(Temporal.Instant.from(shift.startTime));
+      setBreakDurationMinutes(shift.breakDurationMinutes);
+      if (shift.endTime) {
+        setEndTime(Temporal.Instant.from(shift.endTime));
+      }
+    }
+  }, [shift]);
+
+  const adjustedDuration = useMemo(
+    () => duration.subtract({ minutes: breakDurationMinutes }),
+    [breakDurationMinutes, duration],
+  );
+
+  useEffect(() => {
+    if (endTime) {
+      setValidBreak(
+        breakDurationMinutes < endTime.since(startTime).round("minute").minutes,
+      );
+    }
+  }, [breakDurationMinutes, endTime, startTime]);
+
+  const { minShiftDurationMinutes } = job;
+  const minShiftDuration = Temporal.Duration.from({
+    minutes: minShiftDurationMinutes,
+  });
+
+  const onChangeStartTime = (newStart: Temporal.Instant) => {
     setStartTime(newStart);
-    setEdited(true);
     setStartTimeModalOpen(false);
-    setPreventBack(true);
   };
-  const onChangeEndTime = (newEnd: Temporal.PlainDateTime) => {
+
+  const onChangeEndTime = (newEnd: Temporal.Instant) => {
     setEndTime(newEnd);
-    setEdited(true);
     setEndTimeModalOpen(false);
-    setPreventBack(true);
   };
+
   const onChangeNotes = (newNotes: string) => {
     setNotes(newNotes);
-    setPreventBack(true);
   };
 
-  const deleteShift = async () => {
-    await db.delete(shift).where(eq(shift.id, toNumber(shiftId)));
-    forceBack();
+  const onChangeBreakDuration = (newDuration: number) => {
+    setBreakDurationMinutes(newDuration);
   };
 
-  const updateShift = async () => {
-    await db
-      .update(shift)
-      .set({
-        startTime: startTime.toString(),
-        endTime: endTime?.toString() ?? null,
-        duration: endTime ? duration.toString() : null,
-        isEdited: edited,
-        notes,
-      })
-      .where(eq(shift.id, toNumber(shiftId)));
-    forceBack();
+  const updateShift = () => {
+    updateShiftMutation.mutate({
+      id: shiftId,
+      startTime: startTime.toString(),
+      endTime: endTime?.toString() ?? null,
+      isEdited: true,
+      notes,
+      breakDurationMinutes,
+      paycycleId,
+    });
+    router.back();
+  };
+
+  const deleteShift = () => {
+    deleteShiftMutation.mutate(shiftId);
+    router.back();
   };
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: "Edit Shift",
-        }}
-      />
-      <Animated.ScrollView
-        contentContainerStyle={styles.container}
-        style={animatedStyles}
-      >
-        <Section title="Start">
-          <NativePlatformPressable
-            style={[styles.dateButton, styles.startDateButton]}
-            onPress={() => setStartTimeModalOpen(true)}
-          >
-            <View style={styles.horizontal}>
+    <Suspense fallback={<Loading />}>
+      <KeyboardAwareScrollView contentContainerStyle={styles.container}>
+        <Section
+          title={startTime.toLocaleString(undefined, { dateStyle: "full" })}
+          style={styles.selfAlign}
+        />
+        <View style={styles.spaced}>
+          <Section title="Start" style={styles.inputSection}>
+            <Button
+              style={[styles.dateButton, styles.startDateButton]}
+              onPress={() => setStartTimeModalOpen(true)}
+            >
               <Text style={[styles.baseText, styles.dateText]}>
                 {startTime.toLocaleString(undefined, {
-                  dateStyle: "full",
                   timeStyle: "short",
                 })}
               </Text>
+            </Button>
+            <TimePicker
+              open={startTimeModalOpen}
+              date={startTime}
+              minimumDate={startTime.subtract({ hours: 36 })}
+              maximumDate={endTime ?? Temporal.Now.instant()}
+              title={"Shift Start Time"}
+              onConfirm={onChangeStartTime}
+              onCancel={() => {
+                setStartTimeModalOpen(false);
+              }}
+            />
+          </Section>
+          <Section title="Break" style={styles.inputSection}>
+            <View style={styles.horizontal}>
+              <TextInput
+                style={styles.breakInput}
+                defaultValue={breakDurationMinutes.toString()}
+                onChangeText={(text) => onChangeBreakDuration(toNumber(text))}
+                inputMode="numeric"
+                maxLength={3}
+              />
+              <Text style={styles.floatingText}>mins</Text>
             </View>
-          </NativePlatformPressable>
-          <DatePicker
-            open={startTimeModalOpen}
-            date={startTime}
-            minimumDate={startTime.subtract({ hours: 36 })}
-            maximumDate={endTime ?? Temporal.Now.plainDateTimeISO()}
-            title={"Paycycle Start Date"}
-            onConfirm={onChangeStartTime}
-            onCancel={() => {
-              setStartTimeModalOpen(false);
-            }}
-          />
-        </Section>
-        <Section title="End">
-          <NativePlatformPressable
-            style={[styles.dateButton, styles.endDateButton]}
-            onPress={() => setEndTimeModalOpen(true)}
-          >
-            <Text style={[styles.baseText, styles.dateText]}>
-              {endTime?.toLocaleString(undefined, {
-                dateStyle: "full",
-                timeStyle: "short",
-              }) || "End At.."}
+          </Section>
+          <Section title="End" style={styles.inputSection}>
+            <Button
+              style={[styles.dateButton, styles.endDateButton]}
+              onPress={() => setEndTimeModalOpen(true)}
+            >
+              <Text style={[styles.baseText, styles.dateText]}>
+                {endTime?.toLocaleString(undefined, {
+                  timeStyle: "short",
+                }) || "End At.."}
+              </Text>
+            </Button>
+            <TimePicker
+              open={endTimeModalOpen}
+              minimumDate={startTime}
+              maximumDate={startTime.add({ hours: 36 })}
+              date={endTime ?? Temporal.Now.instant()}
+              title={"Shift End Time"}
+              onConfirm={onChangeEndTime}
+              onCancel={() => setEndTimeModalOpen(false)}
+            />
+          </Section>
+        </View>
+        {!validBreak && (
+          <View style={styles.warningContainer}>
+            <Icon name="alert-circle" style={styles.warning} />
+            <Text style={styles.warning}>
+              Break duration is longer than shift duration
             </Text>
-          </NativePlatformPressable>
-          <DatePicker
-            open={endTimeModalOpen}
-            minimumDate={startTime}
-            maximumDate={startTime.add({ hours: 36 })}
-            date={endTime ?? Temporal.Now.plainDateTimeISO()}
-            title={"Paycycle End Date"}
-            onConfirm={onChangeEndTime}
-            onCancel={() => setEndTimeModalOpen(false)}
-          />
-        </Section>
+          </View>
+        )}
         <View
           style={{
             flexDirection: "row",
@@ -176,26 +209,26 @@ const ShiftScreen = () => {
           }}
         >
           <View>
-            <Section title="Duration" style={{ textAlign: "center" }}>
+            <Section title="Duration">
               <Text style={[styles.baseText, styles.durationText]}>
-                {stringToTime(duration.round("seconds").toLocaleString())}
+                {longFormDuration(duration)}
               </Text>
             </Section>
           </View>
           <View>
-            <Section title="Break" style={{ textAlign: "center" }}>
+            <Section title="Break">
               <Text style={[styles.baseText, styles.breakText]}>
-                {stringToTime(breakDuration.round("seconds").toLocaleString())}
+                {longFormDuration(
+                  Temporal.Duration.from({ minutes: breakDurationMinutes }),
+                )}
               </Text>
             </Section>
           </View>
           <View>
-            <Section title="Total" style={{ textAlign: "center" }}>
+            <Section title="Total">
               <Text style={[styles.baseText, styles.durationText]}>
-                {stringToTime(
-                  clampDuration(adjustedDuration, minShiftDuration)
-                    .round("seconds")
-                    .toLocaleString(),
+                {longFormDuration(
+                  clampDuration(adjustedDuration, minShiftDuration),
                 ).concat(
                   Temporal.Duration.compare(
                     adjustedDuration,
@@ -214,7 +247,7 @@ const ShiftScreen = () => {
           </Text>
         )}
         <Section title="Notes">
-          <CustomTextInput
+          <TextInput
             value={notes}
             placeholder="Add shift notes..."
             multiline
@@ -222,30 +255,25 @@ const ShiftScreen = () => {
             style={styles.textInput}
           />
         </Section>
-        <View style={styles.horizontal}>
-          <NativePlatformPressable
-            style={[styles.button, styles.delete]}
-            onPress={deleteShift}
-          >
+        <View style={[styles.horizontal, styles.buttonContainer]}>
+          <Button style={[styles.button, styles.delete]} onPress={deleteShift}>
             <Icon name="trash-2" />
             <Text style={styles.buttonText}>Delete</Text>
-          </NativePlatformPressable>
-          <NativePlatformPressable
-            style={[styles.button]}
-            onPress={updateShift}
-          >
+          </Button>
+          <Button style={[styles.button]} onPress={updateShift}>
             <Icon name="check" />
             <Text style={styles.buttonText}>Update</Text>
-          </NativePlatformPressable>
+          </Button>
         </View>
-      </Animated.ScrollView>
-    </>
+      </KeyboardAwareScrollView>
+    </Suspense>
   );
 };
 
 const styles = StyleSheet.create((theme) => ({
   container: {
     padding: theme.spacing[2],
+    paddingHorizontal: theme.spacing[5],
     gap: theme.spacing[2],
   },
   buttonText: {
@@ -259,11 +287,19 @@ const styles = StyleSheet.create((theme) => ({
   },
   horizontal: {
     flexDirection: "row",
-    gap: theme.spacing[4],
+    gap: theme.spacing[1],
     alignItems: "center",
   },
-  button: {
+  buttonContainer: {
+    marginBlockStart: theme.spacing[2],
+    gap: theme.spacing[4],
+  },
+  spaced: {
     flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  button: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
     gap: theme.spacing[2],
@@ -276,8 +312,11 @@ const styles = StyleSheet.create((theme) => ({
     borderColor: theme.colors.success,
   },
   dateButton: {
+    backgroundColor: theme.colors.transparent,
+    borderWidth: theme.borderWidths.thin,
     paddingVertical: theme.spacing[4],
     alignSelf: "flex-start",
+    borderRadius: theme.radii["2xl"],
   },
   endDateButton: {
     borderColor: theme.colors.error,
@@ -288,10 +327,10 @@ const styles = StyleSheet.create((theme) => ({
     textAlign: "center",
   },
   durationText: {
-    color: theme.colors.iris11,
+    color: theme.colors.iris12,
   },
   breakText: {
-    color: theme.colors.amber11,
+    color: theme.colors.amber12,
   },
   delete: {
     backgroundColor: theme.colors.error,
@@ -303,6 +342,33 @@ const styles = StyleSheet.create((theme) => ({
     minHeight: theme.sizes[20],
     width: "100%",
     textAlignVertical: "top",
+  },
+  breakInput: {
+    width: theme.sizes[24],
+    borderColor: theme.colors.amber7,
+    textAlign: "left",
+    paddingVertical: theme.spacing[4],
+  },
+  warningContainer: {
+    flexDirection: "row",
+    gap: theme.spacing[1],
+    alignItems: "center",
+  },
+  warning: {
+    color: theme.colors.amber11,
+  },
+  floatingText: {
+    position: "absolute",
+    right: theme.spacing[4],
+    color: theme.colors.textSecondary,
+    fontSize: theme.sizes[4],
+  },
+  selfAlign: {
+    alignSelf: "center",
+  },
+  inputSection: {
+    alignItems: "center",
+    gap: theme.spacing[1],
   },
 }));
 
