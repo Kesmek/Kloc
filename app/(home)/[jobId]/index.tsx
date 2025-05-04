@@ -116,7 +116,7 @@ const JobScreen = () => {
     <Suspense fallback={<Loading />}>
       <Stack.Screen
         options={{
-          title: `${jobName} Paycycles`,
+          headerTitle: `${jobName} Paycycles`,
         }}
       />
       <FlatList

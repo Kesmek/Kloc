@@ -34,7 +34,8 @@ export const ErrorBoundary = ({ error, retry }: ErrorBoundaryProps) => {
 };
 
 const Home = () => {
-  const { findLastShiftContext, fetchJobs, fetchPaycycles } = useData();
+  const { findLastShiftContext, fetchJobs, fetchPaycycles, getJobById } =
+    useData();
   const router = useRouter();
 
   const queryClient = useQueryClient();
@@ -45,8 +46,12 @@ const Home = () => {
 
       for (const job of jobs) {
         queryClient.prefetchQuery({
-          queryKey: ["paycycle", job.id],
+          queryKey: ["paycycles", job.id],
           queryFn: () => fetchPaycycles(job.id),
+        });
+        queryClient.prefetchQuery({
+          queryKey: ["job", job.id],
+          queryFn: () => getJobById(job.id),
         });
       }
 

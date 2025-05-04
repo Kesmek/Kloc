@@ -134,15 +134,26 @@ const ShiftScreen = () => {
       <KeyboardAwareScrollView contentContainerStyle={styles.container}>
         <Section
           title={startTime.toLocaleString(undefined, { dateStyle: "full" })}
-          style={styles.selfAlign}
+          style={styles.title}
         />
         <View style={styles.spaced}>
-          <Section title="Start" style={styles.inputSection}>
+          <Section
+            iconName="arrow-down-right"
+            title="Start"
+            style={styles.inputSection}
+            titleStyle={styles.startText}
+          >
             <Button
               style={[styles.dateButton, styles.startDateButton]}
               onPress={() => setStartTimeModalOpen(true)}
             >
-              <Text style={[styles.baseText, styles.dateText]}>
+              <Text
+                style={[
+                  styles.baseText,
+                  styles.dateText,
+                  styles.startTextSubtle,
+                ]}
+              >
                 {startTime.toLocaleString(undefined, {
                   timeStyle: "short",
                 })}
@@ -160,24 +171,38 @@ const ShiftScreen = () => {
               }}
             />
           </Section>
-          <Section title="Break" style={styles.inputSection}>
+          <Section
+            iconName="pause"
+            title="Break"
+            style={styles.inputSection}
+            titleStyle={styles.breakTextSubtle}
+          >
             <View style={styles.horizontal}>
               <TextInput
-                style={styles.breakInput}
+                style={[styles.breakInput, styles.breakTextSubtle]}
                 defaultValue={breakDurationMinutes.toString()}
                 onChangeText={(text) => onChangeBreakDuration(toNumber(text))}
                 inputMode="numeric"
                 maxLength={3}
               />
-              <Text style={styles.floatingText}>mins</Text>
+              <Text style={[styles.floatingText, styles.secondaryText]}>
+                mins
+              </Text>
             </View>
           </Section>
-          <Section title="End" style={styles.inputSection}>
+          <Section
+            iconName="arrow-up-right"
+            title="End"
+            style={styles.inputSection}
+            titleStyle={styles.endText}
+          >
             <Button
               style={[styles.dateButton, styles.endDateButton]}
               onPress={() => setEndTimeModalOpen(true)}
             >
-              <Text style={[styles.baseText, styles.dateText]}>
+              <Text
+                style={[styles.baseText, styles.dateText, styles.endTextSubtle]}
+              >
                 {endTime?.toLocaleString(undefined, {
                   timeStyle: "short",
                 }) || "End At.."}
@@ -202,51 +227,41 @@ const ShiftScreen = () => {
             </Text>
           </View>
         )}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-around",
-          }}
-        >
-          <View>
-            <Section title="Duration">
-              <Text style={[styles.baseText, styles.durationText]}>
-                {longFormDuration(duration)}
-              </Text>
-            </Section>
-          </View>
-          <View>
-            <Section title="Break">
-              <Text style={[styles.baseText, styles.breakText]}>
-                {longFormDuration(
-                  Temporal.Duration.from({ minutes: breakDurationMinutes }),
-                )}
-              </Text>
-            </Section>
-          </View>
-          <View>
-            <Section title="Total">
-              <Text style={[styles.baseText, styles.durationText]}>
-                {longFormDuration(
-                  clampDuration(adjustedDuration, minShiftDuration),
-                ).concat(
-                  Temporal.Duration.compare(
-                    adjustedDuration,
-                    minShiftDuration,
-                  ) < 0
-                    ? "*"
-                    : "",
-                )}
-              </Text>
-            </Section>
-          </View>
+        <View style={styles.spaced}>
+          <Section
+            iconName="clock"
+            title="Duration"
+            style={styles.inputSection}
+            titleStyle={styles.durationText}
+          >
+            <Text style={[styles.baseText, styles.durationTextSubtle]}>
+              {longFormDuration(duration)}
+            </Text>
+          </Section>
+          <Section
+            title="Total"
+            style={styles.inputSection}
+            titleStyle={styles.durationText}
+          >
+            <Text style={[styles.baseText, styles.durationTextSubtle]}>
+              {longFormDuration(
+                clampDuration(adjustedDuration, minShiftDuration),
+              ).concat(
+                Temporal.Duration.compare(adjustedDuration, minShiftDuration) <
+                  0
+                  ? "*"
+                  : "",
+              )}
+            </Text>
+          </Section>
         </View>
         {Temporal.Duration.compare(adjustedDuration, minShiftDuration) < 0 && (
-          <Text style={styles.baseText}>
-            *Rounded up to minimum shift duration
+          <Text style={[styles.baseText, styles.secondaryText]}>
+            *Rounded to minimum shift duration (
+            {longFormDuration(minShiftDuration)})
           </Text>
         )}
-        <Section title="Notes">
+        <Section title="Notes" titleStyle={styles.notesTitle}>
           <TextInput
             value={notes}
             placeholder="Add shift notes..."
@@ -272,7 +287,6 @@ const ShiftScreen = () => {
 
 const styles = StyleSheet.create((theme) => ({
   container: {
-    padding: theme.spacing[2],
     paddingHorizontal: theme.spacing[5],
     gap: theme.spacing[2],
   },
@@ -297,6 +311,7 @@ const styles = StyleSheet.create((theme) => ({
   spaced: {
     flexDirection: "row",
     justifyContent: "space-around",
+    marginBlockStart: theme.spacing[5],
   },
   button: {
     flex: 1,
@@ -309,7 +324,10 @@ const styles = StyleSheet.create((theme) => ({
     paddingVertical: theme.spacing[4],
   },
   startDateButton: {
-    borderColor: theme.colors.success,
+    borderColor: theme.colors.green7,
+  },
+  endDateButton: {
+    borderColor: theme.colors.red7,
   },
   dateButton: {
     backgroundColor: theme.colors.transparent,
@@ -318,38 +336,55 @@ const styles = StyleSheet.create((theme) => ({
     alignSelf: "flex-start",
     borderRadius: theme.radii["2xl"],
   },
-  endDateButton: {
-    borderColor: theme.colors.error,
-  },
   baseText: {
     fontSize: theme.sizes[4],
     color: theme.colors.text,
     textAlign: "center",
   },
+  secondaryText: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.sizes["3.5"],
+  },
   durationText: {
+    color: theme.colors.iris11,
+  },
+  durationTextSubtle: {
     color: theme.colors.iris12,
   },
-  breakText: {
+  breakText: {},
+  breakTextSubtle: {
     color: theme.colors.amber12,
   },
   delete: {
     backgroundColor: theme.colors.error,
   },
   startText: {
-    color: theme.colors.success,
+    color: theme.colors.green11,
+  },
+  startTextSubtle: {
+    color: theme.colors.green12,
+  },
+  endText: {
+    color: theme.colors.red11,
+  },
+  endTextSubtle: {
+    color: theme.colors.red12,
   },
   textInput: {
     minHeight: theme.sizes[20],
     width: "100%",
     textAlignVertical: "top",
+    marginBlockStart: theme.spacing[2],
   },
   breakInput: {
     width: theme.sizes[24],
     borderColor: theme.colors.amber7,
     textAlign: "left",
     paddingVertical: theme.spacing[4],
+    fontWeight: "bold",
   },
   warningContainer: {
+    alignSelf: "center",
     flexDirection: "row",
     gap: theme.spacing[1],
     alignItems: "center",
@@ -360,15 +395,22 @@ const styles = StyleSheet.create((theme) => ({
   floatingText: {
     position: "absolute",
     right: theme.spacing[4],
-    color: theme.colors.textSecondary,
-    fontSize: theme.sizes[4],
   },
-  selfAlign: {
+  title: {
     alignSelf: "center",
+    backgroundColor: theme.colors.slate2,
+    paddingVertical: theme.spacing[2],
+    paddingHorizontal: theme.spacing[3],
+    borderEndEndRadius: theme.radii.xl,
+    borderStartEndRadius: theme.radii.xl,
+    textTransform: "capitalize",
   },
   inputSection: {
     alignItems: "center",
     gap: theme.spacing[1],
+  },
+  notesTitle: {
+    marginInlineStart: theme.spacing[2],
   },
 }));
 

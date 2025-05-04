@@ -5,7 +5,7 @@
     "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "shiftly",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -22,33 +22,25 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "server",
+      "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
       "expo-router",
-      [
-        "expo-sqlite",
-        {
-          "useLibSQL": false
-        }
-      ],
       [
         "expo-splash-screen",
         {
           "backgroundColor": "#111113",
           "image": "./assets/images/splash.png",
           "imageWidth": 200,
-          "dark": {
-            "image": "./assets/images/splash.png",
-            "backgroundColor": "#111113"
-          },
           "resizeMode": "contain"
         }
-      ]
+      ],
+      "expo-sqlite"
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "reactServerComponents": false
     }
   }
 }

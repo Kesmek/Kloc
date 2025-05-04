@@ -27,7 +27,7 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>myapp</string>
+          <string>shiftly</string>
           <string>com.kesmek.shiftly</string>
         </array>
       </dict>

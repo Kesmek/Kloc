@@ -278,14 +278,10 @@ const styles = StyleSheet.create((theme, rt) => ({
     maxWidth: theme.sizes[56],
   },
   startButton: {
-    borderColor: theme.colors.green7,
-    borderWidth: theme.borderWidths.thin,
-    backgroundColor: theme.colors.green5,
+    backgroundColor: theme.colors.green8,
   },
   endButton: {
-    borderColor: theme.colors.red7,
-    borderWidth: theme.borderWidths.thin,
-    backgroundColor: theme.colors.red5,
+    backgroundColor: theme.colors.error,
   },
   buttonText: {
     fontWeight: "bold",
@@ -349,10 +345,10 @@ const styles = StyleSheet.create((theme, rt) => ({
     color: theme.button.base.color,
   },
   endButtonText: {
-    color: theme.colors.red11,
+    color: theme.colors.text,
   },
   startButtonText: {
-    color: theme.colors.green11,
+    color: theme.colors.text,
   },
 }));
 

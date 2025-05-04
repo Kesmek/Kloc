@@ -138,7 +138,7 @@ const JobForm = ({
 
   return (
     <KeyboardAwareScrollView contentContainerStyle={[styles.container]}>
-      <Section title="Name">
+      <Section title="Name" titleStyle={styles.sectionTitle}>
         <TextInput
           ref={nameRef}
           errorMessage="This field is required"
@@ -148,7 +148,7 @@ const JobForm = ({
           onSubmitEditing={() => breakRef.current?.focus()}
         />
       </Section>
-      <Section title="Break Deduction">
+      <Section title="Break Deduction" titleStyle={styles.sectionTitle}>
         <View style={styles.horizontal}>
           <TextInput
             ref={breakRef}
@@ -165,7 +165,11 @@ const JobForm = ({
           <Text style={styles.supportingText}>min(s)</Text>
         </View>
       </Section>
-      <Section title="Overtime">
+      <Section
+        title="Overtime"
+        titleStyle={styles.sectionTitle}
+        style={styles.section}
+      >
         <Text style={styles.supportingText}>You receive overtime after</Text>
         <View style={styles.horizontal}>
           <TextInput
@@ -210,7 +214,7 @@ const JobForm = ({
           </Text>
         )}
       </Section>
-      <Section title="Minimum Shift Length">
+      <Section title="Minimum Shift Length" titleStyle={styles.sectionTitle}>
         <View style={styles.horizontal}>
           <TextInput
             ref={shiftLenghtRef}
@@ -227,7 +231,7 @@ const JobForm = ({
         </View>
       </Section>
       {disabledFields.includes("startDate") || (
-        <Section title="Paycycle Start Date">
+        <Section title="Paycycle Start Date" titleStyle={styles.sectionTitle}>
           <Text style={styles.supportingText}>
             Select the current or previous paycycle start date
           </Text>
@@ -278,7 +282,7 @@ const JobForm = ({
           />
         </Section>
       )}
-      <Section title="Comments">
+      <Section title="Comments" titleStyle={styles.sectionTitle}>
         <TextInput
           value={description}
           onChangeText={setDescription}
@@ -359,8 +363,9 @@ export const styles = StyleSheet.create((theme, rt) => ({
     color: theme.colors.text,
     fontWeight: "bold",
   },
-  section: {
-    gap: theme.spacing[1],
+  sectionTitle: {
+    marginBlockEnd: theme.spacing[1],
+    marginInlineStart: theme.spacing[1],
   },
   error: {
     color: theme.colors.error,
@@ -390,6 +395,9 @@ export const styles = StyleSheet.create((theme, rt) => ({
   disabled: {
     color: theme.colors.textSecondary,
     borderColor: theme.colors.slate6,
+  },
+  section: {
+    gap: theme.spacing[1],
   },
 }));
 

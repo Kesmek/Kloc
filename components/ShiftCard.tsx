@@ -74,11 +74,9 @@ const ShiftCard = ({
               <Text style={[styles.secondaryText]}>edited</Text>
             )}
           </View>
-          {shift.notes && (
-            <Text style={styles.secondaryText} numberOfLines={1}>
-              {shift.notes}
-            </Text>
-          )}
+          <Text style={styles.secondaryText} numberOfLines={1}>
+            {shift.notes}
+          </Text>
         </View>
         <View style={styles.rightInfo}>
           <View style={[styles.horizontal]}>
@@ -99,12 +97,6 @@ const ShiftCard = ({
               </Text>
             </View>
           )}
-          {/* <View style={[styles.horizontal]}> */}
-          {/*   <Icon name="pause" style={[styles.break, styles.breakIcon]} /> */}
-          {/*   <Text style={[styles.text, styles.break]}> */}
-          {/*     {longFormDuration(breakDuration)} */}
-          {/*   </Text> */}
-          {/* </View> */}
           <View style={[styles.horizontal]}>
             <Icon name="clock" style={styles.duration} />
             <Text style={[styles.text, styles.duration]}>
@@ -123,11 +115,10 @@ const ShiftCard = ({
 
 export const styles = StyleSheet.create((theme) => ({
   listButton: {
-    height: theme.sizes[20],
     paddingHorizontal: theme.spacing[5],
-    paddingVertical: theme.spacing[1],
+    paddingVertical: theme.spacing[2],
     backgroundColor: theme.colors.slate2,
-    gap: theme.spacing["0.5"],
+    gap: theme.spacing[1],
   },
   text: {
     color: theme.colors.text,
@@ -154,7 +145,6 @@ export const styles = StyleSheet.create((theme) => ({
     gap: theme.spacing[2],
   },
   leftInfo: {
-    flex: 1,
     justifyContent: "center",
   },
   dateContainer: {
@@ -169,9 +159,6 @@ export const styles = StyleSheet.create((theme) => ({
     flexDirection: "row",
     alignItems: "center",
     gap: theme.spacing[1],
-  },
-  flex: {
-    flex: 1,
   },
   secondaryText: {
     color: theme.colors.textSecondary,
