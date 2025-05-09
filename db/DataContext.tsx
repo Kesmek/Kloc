@@ -186,6 +186,7 @@ PRAGMA foreign_keys = ON;
         // Use Drizzle's select syntax
         result = await drizzleDb.query.shift.findMany({
           where: eq(shift.paycycleId, paycycleId),
+          orderBy: desc(shift.startTime),
         });
       } catch (e) {
         console.error("Failed to fetch jobs:", e);
