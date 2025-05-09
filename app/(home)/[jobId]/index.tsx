@@ -82,36 +82,6 @@ const JobScreen = () => {
     }, [createPaycycleMutation, job, paycycles]),
   );
 
-  const renderPaycycles = useCallback(
-    (paycycle: Paycycle) => {
-      const start = Temporal.PlainDate.from(paycycle.startDate);
-      const end = Temporal.PlainDate.from(paycycle.endDate);
-
-      return (
-        <Link
-          href={{
-            pathname: "/[jobId]/[paycycleId]",
-            params: { jobId, paycycleId: paycycle.id },
-          }}
-          asChild
-        >
-          <Button style={styles.card}>
-            <Text
-              style={styles.text}
-              numberOfLines={1}
-            >{`${formatDate(start, start.year !== end.year)}`}</Text>
-            <Icon name="arrow-right" size={18} style={styles.arrow} />
-            <Text
-              style={styles.text}
-              numberOfLines={1}
-            >{`${formatDate(end, start.year !== end.year)}`}</Text>
-          </Button>
-        </Link>
-      );
-    },
-    [jobId],
-  );
-
   return (
     <Suspense fallback={<Loading />}>
       <Stack.Screen
@@ -121,7 +91,7 @@ const JobScreen = () => {
       />
       <FlatList
         data={paycycles}
-        renderItem={({ item }) => renderPaycycles(item)}
+        renderItem={({ item }) => <PaycycleItem paycycle={item} />}
         ItemSeparatorComponent={() => <Separator />}
         style={styles.flatlist}
       />
@@ -152,6 +122,33 @@ const JobScreen = () => {
         <PaycycleWarning onPress={() => setDateModalOpen(true)} />
       )}
     </Suspense>
+  );
+};
+
+const PaycycleItem = ({ paycycle }: { paycycle: Paycycle }) => {
+  const start = Temporal.PlainDate.from(paycycle.startDate);
+  const end = Temporal.PlainDate.from(paycycle.endDate);
+
+  return (
+    <Link
+      href={{
+        pathname: "/[jobId]/[paycycleId]",
+        params: { jobId: paycycle.jobId, paycycleId: paycycle.id },
+      }}
+      asChild
+    >
+      <Button style={styles.card}>
+        <Text
+          style={styles.text}
+          numberOfLines={1}
+        >{`${formatDate(start, start.year !== end.year)}`}</Text>
+        <Icon name="arrow-right" size={18} style={styles.arrow} />
+        <Text
+          style={styles.text}
+          numberOfLines={1}
+        >{`${formatDate(end, start.year !== end.year)}`}</Text>
+      </Button>
+    </Link>
   );
 };
 
