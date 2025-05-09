@@ -18,6 +18,7 @@ import { useShiftMutation } from "@/hooks/useShiftMutation";
 import DateTimePicker from "@/components/DateTimePicker";
 import Button from "@/components/Button";
 import Loading from "@/components/Loading";
+import Animated, { SlideInDown, SlideOutDown } from "react-native-reanimated";
 
 const PaycycleScreen = () => {
   const { jobId: jid, paycycleId: pcid } =
@@ -200,13 +201,15 @@ const PaycycleScreen = () => {
       />
       <View style={styles.bottomContainer}>
         {ongoingShift && (
-          <Shift
-            shift={ongoingShift}
-            minShiftDurationMins={minShiftDurationMinutes}
-            breakDurationMins={breakDurationMinutes}
-            jobId={jobId}
-            ongoing
-          />
+          <Animated.View entering={SlideInDown} exiting={SlideOutDown}>
+            <Shift
+              shift={ongoingShift}
+              minShiftDurationMins={minShiftDurationMinutes}
+              breakDurationMins={breakDurationMinutes}
+              jobId={jobId}
+              ongoing
+            />
+          </Animated.View>
         )}
         <View style={styles.buttonContainer}>
           <Button
@@ -332,7 +335,9 @@ const styles = StyleSheet.create((theme, rt) => ({
     gap: theme.spacing[2],
     backgroundColor: theme.colors.transparent,
   },
-  flatlist: {},
+  flatlist: {
+    marginBlockEnd: theme.spacing[1],
+  },
   vertical: {
     justifyContent: "center",
     alignItems: "flex-end",
