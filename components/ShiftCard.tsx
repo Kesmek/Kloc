@@ -54,7 +54,12 @@ const ShiftCard = ({
       }}
       asChild
     >
-      <RectButton style={styles.listButton}>
+      <RectButton
+        style={StyleSheet.flatten([
+          styles.listButton,
+          ongoing && styles.ongoingShift,
+        ])}
+      >
         <View style={styles.leftInfo}>
           <View style={[styles.horizontal, styles.dateContainer]}>
             <Text style={styles.date}>
@@ -103,7 +108,9 @@ const ShiftCard = ({
               {ongoing
                 ? longFormDuration(duration)
                 : durationFormat(
-                    duration.subtract({ minutes: shift.breakDurationMinutes }),
+                    duration.subtract({
+                      minutes: shift.breakDurationMinutes,
+                    }),
                   )}
             </Text>
           </View>
@@ -119,6 +126,9 @@ export const styles = StyleSheet.create((theme) => ({
     paddingVertical: theme.spacing[2],
     backgroundColor: theme.colors.slate2,
     gap: theme.spacing[1],
+  },
+  ongoingShift: {
+    backgroundColor: theme.colors.slate3,
   },
   text: {
     color: theme.colors.text,
