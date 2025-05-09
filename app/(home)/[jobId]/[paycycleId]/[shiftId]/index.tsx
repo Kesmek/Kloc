@@ -229,7 +229,6 @@ const ShiftScreen = () => {
         )}
         <View style={styles.spaced}>
           <Section
-            iconName="clock"
             title="Duration"
             style={styles.inputSection}
             titleStyle={styles.durationText}
@@ -239,6 +238,7 @@ const ShiftScreen = () => {
             </Text>
           </Section>
           <Section
+            iconName="clock"
             title="Total"
             style={styles.inputSection}
             titleStyle={styles.durationText}
