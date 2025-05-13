@@ -166,6 +166,7 @@ const PaycycleScreen = () => {
           !ongoingShift && <Text style={styles.emptyText}>No shifts yet</Text>
         }
         ListHeaderComponent={renderHeader}
+        stickyHeaderIndices={[0]}
         style={styles.flatlist}
       />
       <DateTimePicker
@@ -238,7 +239,7 @@ const PaycycleScreen = () => {
           {Temporal.PlainDate.compare(
             paycycleStats.endDate,
             Temporal.Now.plainDateISO(),
-          ) > 0 && (
+          ) >= 0 && (
             <Button
               style={[
                 styles.button,
