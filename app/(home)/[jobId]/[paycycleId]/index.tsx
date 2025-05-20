@@ -202,7 +202,17 @@ const PaycycleScreen = () => {
       />
       <View style={styles.bottomContainer}>
         {ongoingShift && (
-          <Animated.View entering={SlideInDown} exiting={SlideOutDown}>
+          <Animated.View
+            entering={
+              // fix for animation getting stuck sometimes when navigating
+              Temporal.Instant.from(ongoingShift.startTime)
+                .until(Temporal.Now.instant())
+                .round("seconds").seconds < 3
+                ? SlideInDown
+                : undefined
+            }
+            exiting={SlideOutDown}
+          >
             <Shift
               shift={ongoingShift}
               minShiftDurationMins={minShiftDurationMinutes}
