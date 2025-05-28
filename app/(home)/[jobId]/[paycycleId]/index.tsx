@@ -7,7 +7,7 @@ import {
   filterOngoingShift,
   getPaycycleStats,
 } from "@/utils/shiftFunctions";
-import { router, Stack, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams } from "expo-router";
 import { Suspense, useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
@@ -85,33 +85,37 @@ const PaycycleScreen = () => {
 
     return (
       <View style={styles.header}>
-        <View style={styles.vertical}>
-          <Button style={styles.headerButton} onPress={router.back}>
-            <Icon name="calendar" style={styles.headerSecondaryText} />
-            <Text style={styles.headerSecondaryText}>
-              {`${Temporal.PlainDate.from(paycycleStats.startDate).toLocaleString(undefined, { month: "short", day: "numeric" })} - ${Temporal.PlainDate.from(paycycleStats.endDate).toLocaleString(undefined, { month: "short", day: "numeric" })}`}
+        <View style={[styles.horizontal, styles.iconText]}>
+          <Icon name="calendar" style={styles.headerSecondaryText} />
+          <Text style={styles.headerSecondaryText}>
+            {`${Temporal.PlainDate.from(paycycleStats.startDate).toLocaleString(undefined, { month: "short", day: "numeric" })} - ${Temporal.PlainDate.from(paycycleStats.endDate).toLocaleString(undefined, { month: "short", day: "numeric" })}`}
+          </Text>
+        </View>
+        <View style={styles.horizontal}>
+          <View style={styles.vertical}>
+            {paycycleStats.paycycleDays > 7 && (
+              <Text style={styles.headerText}>
+                {"Week 1: "}
+                <Text style={styles.bold}>{`${totalWeekOneHours}H`}</Text>
+              </Text>
+            )}
+            <Text style={styles.headerText}>
+              {"Total Hours: "}
+              <Text style={styles.bold}>{totalRegularHours.concat("H")}</Text>
             </Text>
-          </Button>
-        </View>
-        <View style={styles.vertical}>
-          <Text style={styles.headerText}>
-            {"Week 1: "}
-            <Text style={styles.bold}>{`${totalWeekOneHours}H`}</Text>
-          </Text>
-          <Text style={styles.headerText}>
-            {"Week 2: "}
-            <Text style={styles.bold}>{`${totalWeekTwoHours}H`}</Text>
-          </Text>
-        </View>
-        <View style={styles.vertical}>
-          <Text style={styles.headerText}>
-            {"Standard: "}
-            <Text style={styles.bold}>{totalRegularHours.concat("H")}</Text>
-          </Text>
-          <Text style={styles.headerText}>
-            {"Overtime: "}
-            <Text style={styles.bold}>{totalovertimeHours.concat("H")}</Text>
-          </Text>
+          </View>
+          <View style={styles.vertical}>
+            {paycycleStats.paycycleDays > 7 && (
+              <Text style={styles.headerText}>
+                {"Week 2: "}
+                <Text style={styles.bold}>{`${totalWeekTwoHours}H`}</Text>
+              </Text>
+            )}
+            <Text style={styles.headerText}>
+              {"Overtime: "}
+              <Text style={styles.bold}>{totalovertimeHours.concat("H")}</Text>
+            </Text>
+          </View>
         </View>
       </View>
     );
@@ -312,6 +316,13 @@ const styles = StyleSheet.create((theme, rt) => ({
   },
   horizontal: {
     flexDirection: "row",
+    gap: theme.spacing[4],
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconText: {
+    gap: theme.spacing[1],
+    paddingVertical: theme.spacing[1],
   },
   headerText: {
     color: theme.colors.text,
@@ -322,9 +333,7 @@ const styles = StyleSheet.create((theme, rt) => ({
     fontWeight: "500",
   },
   header: {
-    flexWrap: "wrap",
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: "column",
     backgroundColor: theme.colors.slate2,
     borderBottomWidth: theme.borderWidths.thin,
     borderColor: theme.colors.background,
@@ -351,7 +360,7 @@ const styles = StyleSheet.create((theme, rt) => ({
   },
   vertical: {
     justifyContent: "center",
-    alignItems: "flex-end",
+    alignItems: "center",
   },
   bottomContainer: {
     backgroundColor: theme.colors.slate2,
