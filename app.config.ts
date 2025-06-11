@@ -28,6 +28,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       tursoUrl: tursoUrl,
       tursoAuthToken: tursoAuthToken,
       // Add other config variables as needed
+      eas: {
+        projectId: "3a6aba13-d9c2-4806-820e-4a173a702253",
+      },
     },
   };
 };
