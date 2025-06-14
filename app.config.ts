@@ -7,9 +7,6 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   const tursoUrl = process.env.TURSO_DB_URL ?? null; // Use null or a default dev URL if not set
   const tursoAuthToken = process.env.TURSO_DB_AUTH_TOKEN ?? null; // Use null or a dev token if not set
 
-  console.log("tursoUrl", tursoUrl);
-  console.log("tursoAuthToken", tursoAuthToken);
-
   if (!tursoUrl || !tursoAuthToken) {
     // You might want to throw an error during the build if these are missing for a release build
     // Or rely on runtime checks in your app code

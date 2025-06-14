@@ -36,7 +36,8 @@
           "resizeMode": "contain"
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "react-native-edge-to-edge"
     ],
     "experiments": {
       "typedRoutes": true,
