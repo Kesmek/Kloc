@@ -246,10 +246,12 @@ const JobForm = ({
             <DatePicker
               open={dateModalOpen}
               title={"Paycycle Start Date"}
-              minimumDate={Temporal.PlainDate.from(date).subtract({
+              minimumDate={Temporal.PlainDate.from(
+                initialValues.startDate,
+              ).subtract({
                 months: 1,
               })}
-              maximumDate={Temporal.PlainDate.from(date)}
+              maximumDate={Temporal.PlainDate.from(initialValues.startDate)}
               date={Temporal.PlainDate.from(date)}
               onConfirm={(date) => {
                 setDateModalOpen(false);
