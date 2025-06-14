@@ -12,7 +12,7 @@ import { longFormDuration } from "@/utils/shiftFunctions";
 import { useSuspenseQueries } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { View, Text } from "react-native";
+import { View, Text, Alert } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { StyleSheet } from "react-native-unistyles";
 
@@ -125,8 +125,23 @@ const ShiftScreen = () => {
   };
 
   const deleteShift = () => {
-    deleteShiftMutation.mutate(shiftId);
-    router.back();
+    Alert.alert(
+      "Are you sure?",
+      "This action will completely delete this shift.",
+      [
+        {
+          text: "ok",
+          onPress: () => {
+            deleteShiftMutation.mutate(shiftId);
+            router.back();
+          },
+        },
+        {
+          text: "cancel",
+          style: "cancel",
+        },
+      ],
+    );
   };
 
   return (
