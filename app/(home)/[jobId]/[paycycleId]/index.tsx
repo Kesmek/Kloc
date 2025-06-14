@@ -250,10 +250,11 @@ const PaycycleScreen = () => {
               {ongoingShift ? "End At..." : "Start At..."}
             </Text>
           </Button>
-          {Temporal.PlainDate.compare(
+          {(Temporal.PlainDate.compare(
             paycycleStats.endDate,
             Temporal.Now.plainDateISO(),
-          ) >= 0 && (
+          ) >= 0 ||
+            ongoingShift) && (
             <Button
               style={[
                 styles.button,
