@@ -1,8 +1,7 @@
 import Icon from "@/components/Icon";
-import { Link, Stack, useFocusEffect } from "expo-router";
+import { Link, Stack } from "expo-router";
 import { BorderlessButton } from "react-native-gesture-handler";
 import type { NativeStackHeaderRightProps } from "@react-navigation/native-stack";
-import { useCallback, useState } from "react";
 
 const HeaderRight = (props: NativeStackHeaderRightProps) => (
   <Link href={"/CreateJob"} asChild>
@@ -13,14 +12,6 @@ const HeaderRight = (props: NativeStackHeaderRightProps) => (
 );
 
 const Home = () => {
-  const [delay, setDelay] = useState(true);
-
-  useFocusEffect(
-    useCallback(() => {
-      setTimeout(() => setDelay(false), 200);
-    }, []),
-  );
-
   return (
     <Stack
       screenOptions={{
@@ -34,7 +25,8 @@ const Home = () => {
         name="index"
         options={{
           title: "Jobs",
-          headerRight: (props) => (delay ? null : <HeaderRight {...props} />),
+          // headerRight: (props) => (delay ? null : <HeaderRight {...props} />),
+          headerRight: (props) => <HeaderRight {...props} />,
         }}
       />
       <Stack.Screen name="[jobId]/index" options={{ title: "Paycycles" }} />
