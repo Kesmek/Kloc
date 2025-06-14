@@ -10,12 +10,12 @@
     "preview": {
       "distribution": "internal"
     },
-    "production": {}
-  },
-  "ios-simulator": {
-    "extends": "development",
-    "ios": {
-      "simulator": true
+    "production": {},
+    "ios-simulator": {
+      "extends": "development",
+      "ios": {
+        "simulator": true
+      }
     }
   },
   "submit": {
