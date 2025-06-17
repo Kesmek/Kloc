@@ -192,6 +192,7 @@ type AppThemes = {
 
 // override library types
 declare module "react-native-unistyles" {
+  //oxlint-disable-next-line no-empty-object-type
   export interface UnistylesThemes extends AppThemes {}
 }
 
