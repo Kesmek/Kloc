@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question
+    url: https://github.com/Kesmek/shiftly/discussions/new?category=q-a
+    about: Ask and answer questions here.
+  - name: Feature request
+    url: https://github.com/Kesmek/shiftly/discussions/categories/feature-request
+    about: Propose a new feature for this app.
