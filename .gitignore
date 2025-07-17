@@ -39,4 +39,7 @@ app-example
 
 .env.local
 
-shiftly-service-account-file.json
+kloc-service-account-file.json
+credentials.json
+android
+ios

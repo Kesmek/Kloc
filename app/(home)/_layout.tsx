@@ -2,6 +2,8 @@ import Icon from "@/components/Icon";
 import { Link, Stack } from "expo-router";
 import { BorderlessButton } from "react-native-gesture-handler";
 import type { NativeStackHeaderRightProps } from "@react-navigation/native-stack";
+import { useData } from "@/db/DataContext";
+import Loading from "@/components/Loading";
 
 const HeaderRight = (props: NativeStackHeaderRightProps) => (
   <Link href={"/CreateJob"} asChild>
@@ -12,6 +14,12 @@ const HeaderRight = (props: NativeStackHeaderRightProps) => (
 );
 
 const Home = () => {
+  const {isMigrating} = useData();
+
+  if (isMigrating){
+    return <Loading />
+  }
+
   return (
     <Stack
       screenOptions={{

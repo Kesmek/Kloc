@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "Shiftly",
-    "slug": "shiftly",
-    "version": "1.0.6",
+    "name": "Kloc",
+    "slug": "kloc",
+    "version": "1.0.8",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "shiftly",
+    "scheme": "kloc",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.kesmek.shiftly"
+      "supportsTablet": false,
+      "bundleIdentifier": "com.kesmek.kloc"
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +18,7 @@
         "backgroundColor": "#111113"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.kesmek.shiftly"
+      "package": "com.kesmek.kloc"
     },
     "web": {
       "bundler": "metro",
@@ -37,11 +37,19 @@
         }
       ],
       "expo-sqlite",
-      "react-native-edge-to-edge"
+      "react-native-edge-to-edge",
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactServerComponents": false
-    }
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "13c4b178-83ca-49f2-8aba-4f6198fe7ded"
+      }
+    },
+    "owner": "kesmek"
   }
 }

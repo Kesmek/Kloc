@@ -25,22 +25,8 @@ import {
 } from "./schema";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 import migrations from "./migrations/migrations";
-import Constants from "expo-constants";
 
-export const DATABASE_NAME = "shiftly.db";
-//
-// In your db/DataContext.ts or wherever tursoOptions is defined
-export const tursoOptions = {
-  url: Constants.expoConfig?.extra?.tursoUrl as string,
-  authToken: Constants.expoConfig?.extra?.tursoAuthToken as string,
-};
-
-// Add checks to ensure they exist if needed
-if (!tursoOptions.url || !tursoOptions.authToken) {
-  throw new Error(
-    "Turso configuration is missing in Constants.expoConfig.extra!",
-  );
-}
+export const DATABASE_NAME = "kloc.db";
 
 interface DataContextType {
   createShift: (
@@ -109,7 +95,7 @@ PRAGMA foreign_keys = ON;
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isMigrating, setIsMigrating] = useState(false);
+  const [isMigrating, setIsMigrating] = useState(true);
   const [migrationError, setMigrationError] = useState<Error | undefined>();
   const syncIntervalRef = useRef<number>(null);
 
@@ -198,8 +184,6 @@ PRAGMA foreign_keys = ON;
 
   // Initial fetch effect
   useEffect(() => {
-    //setIsMigrating(true); // Let's rely on success/error states primarily
-
     if (error) {
       console.error("Migration Hook Error:", error); // Log the specific error
       setMigrationError(error);
@@ -208,11 +192,16 @@ PRAGMA foreign_keys = ON;
       setIsMigrating(false); // Hook finished (successfully)
       setMigrationError(undefined);
       console.log("Migration Hook Success.");
-    } else {
-      // Neither success nor error yet - migration in progress or not started
-      setIsMigrating(true);
-    }
+    }   
   }, [success, error]);
+
+  useEffect(() => {
+    // Only run this if migrations are done (`!isMigrating`) and they were successful (`!migrationError`).
+    if (!isMigrating && !migrationError) {
+      console.log("State is ready, fetching initial data...");
+      fetchJobs();
+    }
+  }, [isMigrating, migrationError, fetchJobs]); // Dependencies
 
   // Cleanup effect for interval
   useEffect(() => {
